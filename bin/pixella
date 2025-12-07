@@ -1,0 +1,24 @@
+#!/bin/bash
+# Pixella - CLI Wrapper for Python 3.11
+# Direct Python workflow (no Poetry)
+# Usage: pixella [command] [args]
+#   pixella chat "question"       - Send a message
+#   pixella interactive           - Start interactive mode
+#   pixella version              - Show version
+#   pixella web                  - Launch web UI
+#   pixella --help               - Show help
+
+PYTHON_CMD="python3.11"
+
+# Check if python3.11 is available
+if ! command -v $PYTHON_CMD &> /dev/null; then
+    echo "Error: python3.11 not found. Please install Python 3.11."
+    exit 1
+fi
+
+# Get the script directory and parent directory (Pixella root)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PIXELLA_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+
+# Run Python entrypoint with all arguments
+$PYTHON_CMD "$PIXELLA_ROOT/entrypoint.py" "$@"
