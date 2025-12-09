@@ -3,7 +3,7 @@
 **A powerful, production-ready chatbot system with CLI and Web UI, powered by Google Generative AI**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-1.20.0-blue)](version)
+[![Version](https://img.shields.io/badge/version-1.20.4-blue)](version)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status: Active](https://img.shields.io/badge/status-active-brightgreen)]()
 
@@ -49,36 +49,55 @@
 ### Prerequisites
 
 - **Python 3.11 or higher** (required)
-- pip package manager
+- **Git**: For cloning the repository.
 - Internet connection (for dependencies)
+
+The installation script will handle `pip` and virtual environment setup automatically.
 
 ### Automated Installation
 
 Use the provided installation script:
 
 ```bash
-# Navigate to Pixella directory
-cd Pixella
+# Navigate to Pixella directory (if not already there)
+# cd Pixella 
 
 # Run installation script
 bash scripts/install.sh
 ```
 
-This will:
+This script will:
 
-1. ✓ Check Python 3.11+
-2. ✓ Install dependencies
-3. ✓ Create necessary directories
-4. ✓ Generate .env template
-5. ✓ Setup environment variables
-6. ✓ Export command to PATH
-7. ✓ Verify installation
+1.  Detect your operating system (Linux, macOS, Windows/WSL/Git Bash).
+2.  Check for compatible Python (3.11+) and Git installations.
+3.  Clone the repository (if running remotely).
+4.  **Create and activate a Python virtual environment (`.venv`).**
+5.  Install all Python dependencies into the virtual environment.
+6.  Create necessary data directories.
+7.  Generate a `.env` template if one doesn't exist.
+8.  Prompt for your Google API Key and save it to `.env`.
+9.  Create a `pixella` command wrapper in `bin/` and add it to your shell's PATH.
+10. Verify the installation.
 
 ### Manual Installation
+
+It's highly recommended to use a Python virtual environment to manage dependencies.
 
 ```bash
 # Navigate to project directory
 cd Pixella
+
+# Create a virtual environment
+python3 -m venv .venv
+
+# Activate the virtual environment
+# On macOS/Linux:
+source .venv/bin/activate
+# On Windows (Git Bash/WSL):
+source .venv/Scripts/activate
+# On Windows (Cmd/PowerShell), you'll need to run:
+# .\.venv\Scripts\activate.bat  (for Cmd)
+# .\.venv\Scripts\Activate.ps1  (for PowerShell)
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -91,7 +110,7 @@ pip install -r requirements.txt
 - `langchain` - LLM integration
 - `langchain-google-genai` - Google AI models
 - `chromadb` - Vector database for RAG
-- `sentence-transformers` - Embedding models
+- `googlegenerataveaiembeddings` - Embedding models
 - `python-dotenv` - Environment variables
 - `rich` - Terminal styling
 
@@ -488,15 +507,27 @@ If you see an error like `429 Resource exhausted`, it means you have exceeded yo
 
 ### Command Not Found
 
-If you see an error like `pixella: command not found`, it means the `pixella` command is not in your `PATH`. You can fix this by reloading your shell configuration:
+If you see an error like `pixella: command not found`, it means the `pixella` command is not in your `PATH` or your shell hasn't reloaded its configuration.
 
+**For Linux/macOS users:**
+Reload your shell configuration:
 ```bash
 # For zsh
 source ~/.zshrc
 
 # For bash
 source ~/.bashrc
+
+# For other shells, or if the above doesn't work, try sourcing ~/.profile
+source ~/.profile
 ```
+You may need to restart your terminal for changes to take full effect.
+
+**For Windows (Git Bash/WSL) users:**
+The `install.sh` script attempts to add `pixella` to your PATH within your Bash/WSL environment. If the command is not found after installation, try reloading your shell configuration as above, or restart your terminal.
+
+**For Windows (Cmd/PowerShell) users:**
+The `install.sh` script does NOT automatically add `pixella` to the system PATH for native Windows command prompts (Cmd, PowerShell). You will need to manually add the `Pixella/bin` directory to your system's PATH environment variable. The full path is typically `C:\Users\<YourUsername>\.pixella\bin` (if installed remotely) or `path\to\your\cloned\repo\Pixella\bin` (if installed locally).
 
 ### Can't Connect to Streamlit
 
@@ -592,5 +623,5 @@ Planned features:
 
 **Made with ❤️ by Pixella Contributors**
 
-Last updated: December 2025 - version 1.0.0 -> 1.20.0
+Last updated: December 2025 - version 1.20.0 -> 1.20.4
 Python 3.11+ | MIT License

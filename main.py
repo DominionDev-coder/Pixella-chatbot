@@ -8,12 +8,7 @@ import sys
 import os
 from pathlib import Path
 
-# Ensure Python 3.11+
-if sys.version_info < (3, 11):
-    print("❌ Error: Python 3.11 or higher is required")
-    print(f"   Your version: {sys.version_info.major}.{sys.version_info.minor}")
-    print(f"   Required: 3.11+")
-    sys.exit(1)
+
 
 
 # Color codes

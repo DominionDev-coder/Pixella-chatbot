@@ -24,7 +24,7 @@ Pixella reads its configuration from a `.env` file located in the `Pixella/` dir
 *   **`USER_NAME`**: Your name, used by Pixella for personalized responses. Default is `User`.
 *   **`USER_PERSONA`**: A description of your persona or role (e.g., "a Python developer working on AI projects"). This helps Pixella tailor its responses.
 *   **`MEMORY_PATH`**: Path to the memory storage for conversation history. Default is `./data/memory`.
-*   **`EMBEDDING_MODEL`**: The embedding model to use for RAG (e.g., `models/embedding-001`).
+*   **`EMBEDDING_MODEL`**: The embedding model to use for RAG (from Google Generative AI, e.g., `models/embedding-001`).
 *   **`ALWAYS_DEBUG`**: Set to `true` or `false` (default) to always enable debug logging.
 *   **`DISABLE_COLORS`**: Set to `true` or `false` (default) to disable colored output in the CLI.
 

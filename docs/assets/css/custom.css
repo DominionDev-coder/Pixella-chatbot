@@ -2,62 +2,62 @@
    GLOBAL COLOR SYSTEM
    ------------------------------------------------------- */
 :root {
-  /* Light mode */
-  --background: #f7f7f7;
-  --surface: #ffffff;
-  --text: #222222;
-  --text-light: #555555;
+  /* Dark mode as default */
+  --background: #121212;
+  --surface: #1e1e1e;
+  --text: #f0f0f0;
+  --text-light: #cccccc;
 
-  --primary: #3f51b5;
-  --primary-dark: #2c3a89;
+  --primary: #7986ff;
+  --primary-dark: #5c6cff;
 
-  --accent: #ff4081;
-  --accent-dark: #d8356b;
+  --accent: #ff77a9;
+  --accent-dark: #ff4c8d;
 
-  --border: #dddddd;
-  --code-bg: #f0f0f0;
+  --border: #333333;
+  --code-bg: #1a1a1a;
 
-  --admonition-note-bg: #e6f7ff;
-  --admonition-note-border: #91d5ff;
-  --admonition-note-text: #004770;
+  --admonition-note-bg: #001529;
+  --admonition-note-border: #1890ff;
+  --admonition-note-text: #e6f7ff;
 
-  --admonition-warning-bg: #fffbe6;
-  --admonition-warning-border: #ffe58f;
-  --admonition-warning-text: #704b00;
+  --admonition-warning-bg: #291500;
+  --admonition-warning-border: #ff7a45;
+  --admonition-warning-text: #fffbe6;
 
-  --admonition-tip-bg: #f6ffed;
-  --admonition-tip-border: #b7eb8f;
-  --admonition-tip-text: #254000;
+  --admonition-tip-bg: #002329;
+  --admonition-tip-border: #52c41a;
+  --admonition-tip-text: #f6ffed;
 }
 
-/* Dark Mode (Automatic if user prefers dark) */
-@media (prefers-color-scheme: dark) {
+/* Light Mode (User preference override) */
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #121212;
-    --surface: #1e1e1e;
-    --text: #f0f0f0;
-    --text-light: #cccccc;
+    --background: #f7f7f7;
+    --surface: #ffffff;
+    --text: #222222;
+    --text-light: #555555;
 
-    --primary: #7986ff;
-    --primary-dark: #5c6cff;
+    --primary: #3f51b5;
+    --primary-dark: #2c3a89;
 
-    --accent: #ff77a9;
-    --accent-dark: #ff4c8d;
+    --accent: #ff4081;
+    --accent-dark: #d8356b;
 
-    --border: #333333;
-    --code-bg: #1a1a1a;
+    --border: #dddddd;
+    --code-bg: #f0f0f0;
 
-    --admonition-note-bg: #001529;
-    --admonition-note-border: #1890ff;
-    --admonition-note-text: #e6f7ff;
+    --admonition-note-bg: #e6f7ff;
+    --admonition-note-border: #91d5ff;
+    --admonition-note-text: #004770;
 
-    --admonition-warning-bg: #291500;
-    --admonition-warning-border: #ff7a45;
-    --admonition-warning-text: #fffbe6;
+    --admonition-warning-bg: #fffbe6;
+    --admonition-warning-border: #ffe58f;
+    --admonition-warning-text: #704b00;
 
-    --admonition-tip-bg: #002329;
-    --admonition-tip-border: #52c41a;
-    --admonition-tip-text: #f6ffed;
+    --admonition-tip-bg: #f6ffed;
+    --admonition-tip-border: #b7eb8f;
+    --admonition-tip-text: #254000;
   }
 }
 

@@ -23,6 +23,13 @@ REPO_URL="https://github.com/DominionDev-coder/Pixella-chatbot"
 REPO_NAME="Pixella-chatbot"
 INSTALL_DIR="${HOME}/.pixella"
 
+# Global variables for OS and Python
+OS_TYPE=""
+PYTHON_CMD=""
+VENV_DIR=".venv"
+VENV_ACTIVATE_CMD=""
+VENV_PYTHON_BIN=""
+
 # Functions
 print_header() {
     echo -e "\n${CYAN}════════════════════════════════════════════════════════════${NC}"
@@ -44,6 +51,36 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}✗ $1${NC}"
+}
+
+detect_os() {
+    print_step "Detecting operating system..."
+    case "$(uname -s)" in
+        Linux*)
+            OS_TYPE="Linux"
+            VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+            VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+            print_success "Detected Linux"
+            ;;
+        Darwin*)
+            OS_TYPE="macOS"
+            VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+            VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+            print_success "Detected macOS"
+            ;;
+        CYGWIN*|MINGW32*|MSYS*|windows*)
+            OS_TYPE="Windows"
+            # WSL/Git Bash compatible activation
+            VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+            VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\"" # Use python.exe for clarity
+            print_warning "Detected Windows. Using WSL/Git Bash compatible commands."
+            print_warning "For native PowerShell/CMD, manual steps may be needed for PATH."
+            ;;
+        *)
+            print_error "Unsupported OS: $(uname -s)"
+            exit 1
+            ;;
+    esac
 }
 
 # Detect if we're running from inside the cloned repo or standalone
@@ -94,37 +131,60 @@ clone_repository() {
 }
 
 check_python_version() {
-    print_step "Checking Python version..."
+    print_step "Checking Python 3.11+ is available..."
     
-    PYTHON_CMD=""
+    local found_python_version=""
     
+    # Prioritize python3.11, then python3.12, then generic python3
     for cmd in python3.11 python3.12 python3; do
         if command -v "$cmd" &> /dev/null; then
-            VERSION=$($cmd -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-            if [[ "$VERSION" == "3.11" ]] || [[ "$VERSION" == "3.12" ]]; then
+            VERSION=$("$cmd" -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+            MAJOR_VERSION=$(echo "$VERSION" | cut -d'.' -f1)
+            MINOR_VERSION=$(echo "$VERSION" | cut -d'.' -f2)
+            
+            if [[ "$MAJOR_VERSION" -eq 3 ]] && [[ "$MINOR_VERSION" -ge 11 ]]; then
                 PYTHON_CMD="$cmd"
-                print_success "Found compatible Python version: $VERSION ($PYTHON_CMD)"
+                found_python_version="$VERSION"
+                print_success "Found compatible Python version: $found_python_version ($PYTHON_CMD)"
                 break
             fi
         fi
     done
     
     if [ -z "$PYTHON_CMD" ]; then
-        print_error "Python 3.11 or 3.12 is required."
-        print_error "Python 3.13 and above may have compatibility issues."
+        print_error "Python 3.11 or higher is required."
+        print_error "Please install a compatible Python version."
         exit 1
     fi
 }
 
+create_and_activate_venv() {
+    print_step "Creating and activating Python virtual environment ($VENV_DIR)..."
+    
+    if [ -d "$VENV_DIR" ]; then
+        print_warning "Virtual environment already exists. Reusing it."
+    else
+        "$PYTHON_CMD" -m venv "$VENV_DIR" || {
+            print_error "Failed to create virtual environment"
+            exit 1
+        }
+        print_success "Virtual environment created."
+    fi
+    
+    # Activate the virtual environment
+    # Using 'eval' to ensure activation script modifies the current shell's environment
+    eval "$VENV_ACTIVATE_CMD" || {
+        print_error "Failed to activate virtual environment using '$VENV_ACTIVATE_CMD'"
+        exit 1
+    }
+    print_success "Virtual environment activated."
+    
+    # Set PYTHON_CMD to the venv's python
+    PYTHON_CMD="$VENV_PYTHON_BIN"
+}
+
 check_dependencies() {
     print_step "Checking system dependencies..."
-    
-    # Check for pip
-    if ! $PYTHON_CMD -m pip --version &> /dev/null; then
-        print_error "pip is not installed for $PYTHON_CMD"
-        exit 1
-    fi
-    print_success "pip found"
     
     # Check for git if doing remote installation
     if [ "$INSTALLATION_MODE" = "remote" ]; then
@@ -196,13 +256,55 @@ EOF
         print_success "Created minimal .env file"
     fi
     
-    # Prompt for API key
+    # Prompt for API key and update using a Python script for cross-platform compatibility
     echo
     read -p "Enter your Google API Key (or press Enter to skip): " API_KEY
     if [ ! -z "$API_KEY" ]; then
-        # Escape special characters for sed
-        API_KEY_ESCAPED=$(printf '%s\n' "$API_KEY" | sed -e 's/[\/&]/\\&/g')
-        sed -i '' "s/your-api-key-here/$API_KEY_ESCAPED/" "$ENV_FILE"
+        # Create a temporary Python script to update the .env file
+        PYTHON_SCRIPT_PATH="$PROJECT_ROOT/scripts/update_env.py"
+        mkdir -p "$(dirname "$PYTHON_SCRIPT_PATH")" # Ensure scripts directory exists
+        cat > "$PYTHON_SCRIPT_PATH" << EOM
+import os
+import sys
+
+def update_env_file(env_file, key_to_update, new_value):
+    try:
+        if not os.path.exists(env_file):
+            with open(env_file, 'w') as f:
+                f.write(f"{key_to_update}={new_value}\\n")
+            return
+
+        with open(env_file, 'r') as f:
+            lines = f.readlines()
+
+        updated = False
+        with open(env_file, 'w') as f:
+            for line in lines:
+                if line.strip().startswith(f"{key_to_update}="):
+                    f.write(f"{key_to_update}={new_value}\\n")
+                    updated = True
+                else:
+                    f.write(line)
+            if not updated:
+                f.write(f"{key_to_update}={new_value}\\n")
+    except Exception as e:
+        print(f"Error updating .env file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python update_env.py <env_file_path> <key> <value>", file=sys.stderr)
+        sys.exit(1)
+    
+    env_file = sys.argv[1]
+    key_to_update = sys.argv[2]
+    new_value = sys.argv[3]
+    update_env_file(env_file, key_to_update, new_value)
+
+EOM
+        # Execute the Python script using the venv's python
+        "$PYTHON_CMD" "$PYTHON_SCRIPT_PATH" "$ENV_FILE" "GOOGLE_API_KEY" "$API_KEY"
+        rm "$PYTHON_SCRIPT_PATH" # Clean up the temporary script
         print_success "API key configured"
     fi
 }

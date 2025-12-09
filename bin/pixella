@@ -1,24 +1,33 @@
 #!/bin/bash
-# Pixella - CLI Wrapper for Python 3.11
-# Direct Python workflow (no Poetry)
-# Usage: pixella [command] [args]
-#   pixella chat "question"       - Send a message
-#   pixella interactive           - Start interactive mode
-#   pixella version              - Show version
-#   pixella web                  - Launch web UI
-#   pixella --help               - Show help
+# Pixella - CLI Wrapper
+# This script activates the virtual environment and runs the Pixella entrypoint.
 
-PYTHON_CMD="python3.11"
-
-# Check if python3.11 is available
-if ! command -v $PYTHON_CMD &> /dev/null; then
-    echo "Error: python3.11 not found. Please install Python 3.11."
-    exit 1
-fi
-
-# Get the script directory and parent directory (Pixella root)
+# Get the script's directory (i.e., the bin directory)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PIXELLA_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+# Project root is one level up from the script directory
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
-# Run Python entrypoint with all arguments
-$PYTHON_CMD "$PIXELLA_ROOT/entrypoint.py" "$@"
+# Define virtual environment path relative to project root
+VENV_DIR="$PROJECT_ROOT/.venv"
+
+# Determine OS and activation command for venv
+case "$(uname -s)" in
+    Linux*|Darwin*) 
+        VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+        VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+        ;;
+    CYGWIN*|MINGW32*|MSYS*|windows*) 
+        VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+        VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\""
+        ;;
+    *) 
+        echo "Error: Unsupported OS for Pixella wrapper."
+        exit 1
+        ;;
+esac
+
+# Activate the virtual environment
+eval "$VENV_ACTIVATE_CMD"
+
+# Execute the main entrypoint with all arguments
+exec $VENV_PYTHON_BIN "$PROJECT_ROOT/entrypoint.py" "$@"
