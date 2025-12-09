@@ -1,3 +1,5 @@
+[< Home](index.md)
+
 # Getting Started with Pixella
 
 This guide will help you quickly start using Pixella's Command-Line Interface (CLI) and Web User Interface (UI).

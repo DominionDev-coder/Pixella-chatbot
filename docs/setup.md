@@ -1,3 +1,5 @@
+[< Home](index.md)
+
 # Setup and Configuration
 
 This document details how to set up and configure Pixella for optimal use. Configuration is primarily managed through environment variables, which can be easily set using a `.env` file or interactively via the CLI.

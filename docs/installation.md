@@ -1,6 +1,26 @@
+[< Home](index.md)
+
 # Installation
 
 This document guides you through the process of installing Pixella, setting up its dependencies, and getting it ready for use.
+
+## Quick Installation (Recommended)
+
+For a fast and automated setup, you can use our installation script. This script will clone the repository, set up a virtual environment, install dependencies, and run the initial configuration.
+
+Open your terminal and run one of the following commands:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DominionDev-coder/Pixella-chatbot/main/scripts/install.sh | sh
+```
+
+or
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DominionDev-coder/Pixella-chatbot/main/scripts/install.sh | bash
+```
+
+After the script completes, follow the prompts for initial configuration.
 
 ## Prerequisites
 
@@ -12,13 +32,15 @@ Before installing Pixella, ensure you have the following installed on your syste
 
 ## Step-by-Step Installation
 
+If you prefer a manual setup or need to troubleshoot, follow these steps:
+
 ### 1. Clone the Repository
 
 Open your terminal or command prompt and clone the Pixella repository:
 
 ```bash
-git clone https://github.com/your-username/Pixella.git # Replace with actual repository URL
-cd Pixella
+git clone https://github.com/DominionDev-coder/Pixella-chatbot.git # Make sure this is the correct repository URL
+cd Pixella-chatbot
 ```
 
 ### 2. Create and Activate a Virtual Environment
