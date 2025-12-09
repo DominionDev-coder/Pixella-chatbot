@@ -1,0 +1,202 @@
+/* -------------------------------------------------------
+   GLOBAL COLOR SYSTEM
+   ------------------------------------------------------- */
+:root {
+  /* Light mode */
+  --background: #f7f7f7;
+  --surface: #ffffff;
+  --text: #222222;
+  --text-light: #555555;
+
+  --primary: #3f51b5;
+  --primary-dark: #2c3a89;
+
+  --accent: #ff4081;
+  --accent-dark: #d8356b;
+
+  --border: #dddddd;
+  --code-bg: #f0f0f0;
+
+  --admonition-note-bg: #e6f7ff;
+  --admonition-note-border: #91d5ff;
+  --admonition-note-text: #004770;
+
+  --admonition-warning-bg: #fffbe6;
+  --admonition-warning-border: #ffe58f;
+  --admonition-warning-text: #704b00;
+
+  --admonition-tip-bg: #f6ffed;
+  --admonition-tip-border: #b7eb8f;
+  --admonition-tip-text: #254000;
+}
+
+/* Dark Mode (Automatic if user prefers dark) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --surface: #1e1e1e;
+    --text: #f0f0f0;
+    --text-light: #cccccc;
+
+    --primary: #7986ff;
+    --primary-dark: #5c6cff;
+
+    --accent: #ff77a9;
+    --accent-dark: #ff4c8d;
+
+    --border: #333333;
+    --code-bg: #1a1a1a;
+
+    --admonition-note-bg: #001529;
+    --admonition-note-border: #1890ff;
+    --admonition-note-text: #e6f7ff;
+
+    --admonition-warning-bg: #291500;
+    --admonition-warning-border: #ff7a45;
+    --admonition-warning-text: #fffbe6;
+
+    --admonition-tip-bg: #002329;
+    --admonition-tip-border: #52c41a;
+    --admonition-tip-text: #f6ffed;
+  }
+}
+
+/* -------------------------------------------------------
+   GLOBAL PAGE BASICS
+   ------------------------------------------------------- */
+body {
+  background: var(--background) !important;
+  color: var(--text) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, Oxygen, Ubuntu, Cantarell,
+               "Helvetica Neue", sans-serif;
+  line-height: 1.7;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+/* Links */
+a {
+  color: var(--accent) !important;
+  font-weight: 500;
+}
+a:hover {
+  color: var(--accent-dark) !important;
+  text-decoration: underline;
+}
+
+/* Horizontal lines */
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* -------------------------------------------------------
+   MARKDOWN ELEMENT STYLES
+   ------------------------------------------------------- */
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid var(--primary);
+  padding-left: 1rem;
+  color: var(--text-light);
+  margin-left: 0;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+table th, table td {
+  padding: 10px;
+  border: 1px solid var(--border);
+}
+table th {
+  background: var(--surface);
+  color: var(--primary);
+}
+
+/* Lists */
+ul, ol {
+  margin-left: 1.2rem;
+}
+
+/* -------------------------------------------------------
+   CODE BLOCKS
+   ------------------------------------------------------- */
+pre, code {
+  background: var(--code-bg) !important;
+  color: var(--text) !important;
+  font-family: "Fira Code", Menlo, monospace;
+  border-radius: 6px;
+}
+
+pre {
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* Inline code */
+code {
+  padding: 2px 4px;
+  font-size: 0.95em;
+  border: 1px solid var(--border);
+}
+
+/* -------------------------------------------------------
+   PAGE WRAPPER (CAYMAN OVERRIDE)
+   ------------------------------------------------------- */
+.main-content {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+/* -------------------------------------------------------
+   ADMONITIONS (CALLOUTS)
+   ------------------------------------------------------- */
+.admonition {
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-left: 5px solid;
+  border-radius: 5px;
+  background-color: var(--admonition-note-bg);
+  border-color: var(--admonition-note-border);
+  color: var(--admonition-note-text);
+}
+
+.admonition.note {
+  background-color: var(--admonition-note-bg);
+  border-color: var(--admonition-note-border);
+  color: var(--admonition-note-text);
+}
+
+.admonition.warning {
+  background-color: var(--admonition-warning-bg);
+  border-color: var(--admonition-warning-border);
+  color: var(--admonition-warning-text);
+}
+
+.admonition.tip {
+  background-color: var(--admonition-tip-bg);
+  border-color: var(--admonition-tip-border);
+  color: var(--admonition-tip-text);
+}
+
+.admonition p:last-child {
+  margin-bottom: 0;
+}
+
+.admonition-title {
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: inherit; /* Inherit color from parent admonition */
+}

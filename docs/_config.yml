@@ -1,0 +1,10 @@
+theme: jekyll-theme-cayman
+title: Your Docs
+description: Documentation
+highlighter: rouge
+rouge:
+  theme: github
+
+# Ensure custom CSS loads
+include:
+  - assets/css/custom.css

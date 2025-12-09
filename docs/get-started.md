@@ -91,4 +91,4 @@ For a full list of configuration options, refer to the [Setup and Configuration 
 
 ---
 
-**Remember to check your API quota regularly to avoid service interruptions.**
+{% include admonition.html type="warning" title="API Quota Reminder" content="Remember to check your API quota regularly to avoid service interruptions. Monitor your usage through the Google Cloud Console or Google AI Studio." %}
