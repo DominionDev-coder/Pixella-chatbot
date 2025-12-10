@@ -56,26 +56,26 @@ print_error() {
 detect_os() {
     print_step "Detecting operating system..."
     case "$(uname -s)" in
-        Linux*)
+        Linux*) 
             OS_TYPE="Linux"
             VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
             VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
             print_success "Detected Linux"
             ;;
-        Darwin*)
+        Darwin*) 
             OS_TYPE="macOS"
             VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
             VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
             print_success "Detected macOS"
-            ;;
-        CYGWIN*|MINGW32*|MSYS*|windows*)
+            ;;;
+        CYGWIN*|MINGW32*|MSYS*|windows*) 
             OS_TYPE="Windows"
             # WSL/Git Bash compatible activation
             VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
             VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\"" # Use python.exe for clarity
             print_warning "Detected Windows. Using WSL/Git Bash compatible commands."
             print_warning "For native PowerShell/CMD, manual steps may be needed for PATH."
-            ;;
+            ;;;
         *)
             print_error "Unsupported OS: $(uname -s)"
             exit 1
@@ -130,58 +130,168 @@ clone_repository() {
     print_success "Repository ready at $PROJECT_ROOT"
 }
 
-check_python_version() {
-    print_step "Checking Python 3.11+ is available..."
+manual_python_installation() {
+    print_step "Manual Python Installation"
+    print_warning "Please download and install Python 3.11 from python.org"
     
-    local found_python_version=""
-    
-    # Prioritize python3.11, then python3.12, then generic python3
-    for cmd in python3.11 python3.12 python3; do
-        if command -v "$cmd" &> /dev/null; then
-            VERSION=$("$cmd" -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-            MAJOR_VERSION=$(echo "$VERSION" | cut -d'.' -f1)
-            MINOR_VERSION=$(echo "$VERSION" | cut -d'.' -f2)
-            
-            if [[ "$MAJOR_VERSION" -eq 3 ]] && [[ "$MINOR_VERSION" -ge 11 ]]; then
-                PYTHON_CMD="$cmd"
-                found_python_version="$VERSION"
-                print_success "Found compatible Python version: $found_python_version ($PYTHON_CMD)"
-                break
+    while true; do
+        read -p "Have you installed Python 3.11? (yes/no) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            if command -v python3.11 &> /dev/null; then
+                print_success "Python 3.11 is now installed."
+                PYTHON_CMD="python3.11"
+                return 0
+            else
+                print_error "Python 3.11 not found in PATH."
+                read -p "Continue with another Python version? (y/n) " -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Nn]$ ]]; then
+                    cleanup_and_abort
+                else
+                    return 1
+                fi
+            fi
+        elif [[ $REPLY =~ ^[Nn]$ ]]; then
+            read -p "Continue with another Python version? (y/n) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Nn]$ ]]; then
+                cleanup_and_abort
+            else
+                return 1
             fi
         fi
     done
+}
+
+install_python3_11() {
+    print_step "Attempting to install Python 3.11..."
     
-    if [ -z "$PYTHON_CMD" ]; then
-        print_error "Python 3.11 or higher is required."
-        print_error "Please install a compatible Python version."
-        exit 1
+    case "$OS_TYPE" in
+        macOS) 
+            if ! command -v brew &> /dev/null; then
+                print_error "Homebrew not found. Please install Homebrew first."
+                return 1
+            fi
+            brew install python@3.11
+            ;; 
+        Linux) 
+            if command -v apt-get &> /dev/null; then
+                sudo apt-get update
+                sudo apt-get install -y python3.11
+            elif command -v dnf &> /dev/null; then
+                sudo dnf install -y python3.11
+            elif command -v yum &> /dev/null; then
+                sudo yum install -y python3.11
+            else
+                print_error "Unsupported Linux distribution."
+                return 1
+            fi
+            ;; 
+        Windows) 
+            print_error "Automatic installation of Python on Windows is not supported."
+            return 1
+            ;; 
+    esac
+    
+    if command -v python3.11 &> /dev/null; then
+        print_success "Python 3.11 installed successfully."
+        PYTHON_CMD="python3.11"
+        return 0
+    else
+        print_error "Python 3.11 installation failed."
+        manual_python_installation
+        return $?
     fi
 }
 
-create_and_activate_venv() {
-    print_step "Creating and activating Python virtual environment ($VENV_DIR)..."
+check_python_version() {
+    print_step "Checking for a compatible Python version..."
     
+    if command -v python3.11 &> /dev/null; then
+        PYTHON_CMD="python3.11"
+        print_success "Found recommended Python version: $PYTHON_CMD"
+        return
+    fi
+
+    print_warning "Python 3.11 is recommended."
+    read -p "Python 3.11 not found. Install it now? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_python3_11
+        if [ $? -ne 0 ]; then
+            # If installation fails and user wants to continue with another version
+            for cmd in python3.12 python3.13; do
+                if command -v "$cmd" &> /dev/null; then
+                    PYTHON_CMD="$cmd"
+                    print_success "Found compatible Python version: $PYTHON_CMD"
+                    return
+                fi
+            done
+        else
+            return
+        fi
+    fi
+    
+    for cmd in python3.12 python3.13; do
+        if command -v "$cmd" &> /dev/null; then
+            PYTHON_CMD="$cmd"
+            print_success "Found compatible Python version: $PYTHON_CMD"
+            return
+        fi
+    done
+    
+    print_error "No compatible Python version found (tried 3.11, 3.12, 3.13)."
+    cleanup_and_abort
+}
+
+cleanup_and_abort() {
+    print_error "Installation aborted."
+    if [ "$INSTALLATION_MODE" = "remote" ]; then
+        print_step "Cleaning up cloned repository..."
+        rm -rf "$PROJECT_ROOT"
+        print_success "Cleanup complete."
+    fi
+    exit 1
+}
+
+
+create_and_activate_venv() {
+    print_step "Checking for virtual environment..."
+
     if [ -d "$VENV_DIR" ]; then
         print_warning "Virtual environment already exists. Reusing it."
-    else
+        eval "$VENV_ACTIVATE_CMD" || {
+            print_error "Failed to activate virtual environment using '$VENV_ACTIVATE_CMD'"
+            exit 1
+        }
+        print_success "Virtual environment activated."
+        PYTHON_CMD="$VENV_PYTHON_BIN"
+        return
+    fi
+
+    read -p "Create and use a virtual environment (.venv)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_step "Creating and activating Python virtual environment ($VENV_DIR)..."
         "$PYTHON_CMD" -m venv "$VENV_DIR" || {
             print_error "Failed to create virtual environment"
             exit 1
         }
         print_success "Virtual environment created."
+        
+        eval "$VENV_ACTIVATE_CMD" || {
+            print_error "Failed to activate virtual environment using '$VENV_ACTIVATE_CMD'"
+            exit 1
+        }
+        print_success "Virtual environment activated."
+        
+        PYTHON_CMD="$VENV_PYTHON_BIN"
+    else
+        print_warning "Skipping virtual environment. Using system Python."
     fi
-    
-    # Activate the virtual environment
-    # Using 'eval' to ensure activation script modifies the current shell's environment
-    eval "$VENV_ACTIVATE_CMD" || {
-        print_error "Failed to activate virtual environment using '$VENV_ACTIVATE_CMD'"
-        exit 1
-    }
-    print_success "Virtual environment activated."
-    
-    # Set PYTHON_CMD to the venv's python
-    PYTHON_CMD="$VENV_PYTHON_BIN"
 }
+
 
 check_dependencies() {
     print_step "Checking system dependencies..."
@@ -271,7 +381,7 @@ def update_env_file(env_file, key_to_update, new_value):
     try:
         if not os.path.exists(env_file):
             with open(env_file, 'w') as f:
-                f.write(f"{key_to_update}={new_value}\\n")
+                f.write(f"{key_to_update}={new_value}\n")
             return
 
         with open(env_file, 'r') as f:
@@ -281,12 +391,12 @@ def update_env_file(env_file, key_to_update, new_value):
         with open(env_file, 'w') as f:
             for line in lines:
                 if line.strip().startswith(f"{key_to_update}="):
-                    f.write(f"{key_to_update}={new_value}\\n")
+                    f.write(f"{key_to_update}={new_value}\n")
                     updated = True
                 else:
                     f.write(line)
             if not updated:
-                f.write(f"{key_to_update}={new_value}\\n")
+                f.write(f"{key_to_update}={new_value}\n")
     except Exception as e:
         print(f"Error updating .env file: {e}", file=sys.stderr)
         sys.exit(1)
@@ -308,6 +418,25 @@ EOM
         print_success "API key configured"
     fi
 }
+
+update_pixella_executable() {
+    print_step "Updating pixella executable..."
+    
+    local pixella_executable="$PROJECT_ROOT/bin/pixella"
+    
+    # Escape for sed
+    local escaped_python_cmd=$(printf '%s\n' "$PYTHON_CMD" | sed 's:[&/\\]:\\&:g')
+
+    if [ -f "$pixella_executable" ]; then
+        # Replace the placeholder with the correct python command
+        sed -i.bak "s|PYTHON_CMD_PLACEHOLDER|$escaped_python_cmd|g" "$pixella_executable"
+        rm "${pixella_executable}.bak"
+        print_success "pixella executable updated to use $PYTHON_CMD"
+    else
+        print_warning "pixella executable not found. Skipping update."
+    fi
+}
+
 
 export_to_path() {
     print_step "Configuring PATH..."
@@ -388,6 +517,7 @@ print_next_steps() {
 main() {
     print_header
     
+    detect_os
     detect_installation_mode
     
     check_python_version
@@ -398,6 +528,12 @@ main() {
         clone_repository
     fi
     
+    cd "$PROJECT_ROOT"
+    
+    create_and_activate_venv
+    
+    update_pixella_executable
+
     setup_directories
     create_env_template
     setup_env_file

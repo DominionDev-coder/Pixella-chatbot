@@ -109,7 +109,7 @@ You can verify that Pixella is installed correctly by running its version comman
 pixella --version
 ```
 
-You should see version `1.20.4` of Pixella displayed.
+You should see version `1.20.5` of Pixella displayed.
 
 ## Running the Chatbot
 

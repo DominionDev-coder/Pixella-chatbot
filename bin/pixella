@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pixella - CLI Wrapper
-# This script activates the virtual environment and runs the Pixella entrypoint.
+# This script activates the virtual environment (if it exists) and runs the Pixella entrypoint.
 
 # Get the script's directory (i.e., the bin directory)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -9,25 +9,29 @@ PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Define virtual environment path relative to project root
 VENV_DIR="$PROJECT_ROOT/.venv"
+PYTHON_CMD="Python3.11" # Default to recommended python
 
 # Determine OS and activation command for venv
 case "$(uname -s)" in
-    Linux*|Darwin*) 
-        VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+    Linux*|Darwin*)
         VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+        VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
         ;;
-    CYGWIN*|MINGW32*|MSYS*|windows*) 
-        VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+    CYGWIN*|MINGW32*|MSYS*|windows*)
         VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\""
+        VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
         ;;
-    *) 
+    *)
         echo "Error: Unsupported OS for Pixella wrapper."
         exit 1
         ;;
 esac
 
-# Activate the virtual environment
-eval "$VENV_ACTIVATE_CMD"
+# If a virtual environment exists, activate it and use its python
+if [ -d "$VENV_DIR" ]; then
+    eval "$VENV_ACTIVATE_CMD"
+    PYTHON_CMD="$VENV_PYTHON_BIN"
+fi
 
 # Execute the main entrypoint with all arguments
-exec $VENV_PYTHON_BIN "$PROJECT_ROOT/entrypoint.py" "$@"
+$PYTHON_CMD "$PROJECT_ROOT/entrypoint.py" "$@"

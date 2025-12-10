@@ -1,10 +1,11 @@
-theme: jekyll-theme-cayman
-title: Your Docs
-description: Documentation
+theme: jekyll-theme-hacker
+title: Pixella Chatbot Docs
+description: Documentation for Pixella Chatbot
 highlighter: rouge
 rouge:
   theme: github
 
-# Ensure custom CSS loads
+# Ensure custom CSS and favicon loads
 include:
   - assets/css/custom.css
+  - assets/pixella_favicon.png

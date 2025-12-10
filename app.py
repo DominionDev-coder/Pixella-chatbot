@@ -62,7 +62,7 @@ st.set_page_config(
     page_icon="🤖",
     layout="centered",
     initial_sidebar_state="expanded",
-    menu_items={"Get help": "https://github.com"}
+    menu_items={"Get help": "https://github.com/ObaTechHub-inc/Pixella-chatbot"}
 )
 
 # Custom CSS with enhanced styling
