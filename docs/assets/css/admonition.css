@@ -1,13 +1,12 @@
 /* Admonition block container */
 .admonition {
-  border-left: 5px solid;
+  background: #252525;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   padding: 1rem 1.2rem;
+  border-left: 6px solid;
   margin: 1.5rem 0;
-  border-radius: 6px;
-  background: #1a1a1a;
-  color: #e0e0e0;
-}
-
+  border-radius: 4px;
+} 
 /* Title */
 .admonition-title {
   font-weight: bold;
@@ -25,6 +24,7 @@
 .admonition.success   { border-color: #66bb6a; }
 .admonition.info      { border-color: #40c4ff; }
 .admonition.todo      { border-color: #ff80ab; }
+
 /* Icons */
 .admonition-title::before {
   display: inline-block;

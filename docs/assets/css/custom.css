@@ -4,15 +4,66 @@
   --primary: #00e5ff;     /* cyan accent */
   --accent: #ff4081;      /* pink accent */
   --text: #e0e0e0;        /* light text */
-}
-
-body {
-  color: var(--text) !important;
+  --border: rgb(10, 199, 220);  /* dark background */
 }
 
 /* Headings */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--primary) !important;
+h1, h2, h3 {
+  color: #99ccff;
+  font-weight: 600;
+}
+
+/* Main text */
+p {
+  color: #ddd;
+  line-height: 1.7;
+}
+
+/* Page background */
+body {
+  background: #121212 linear-gradient(to bottom, #1a1a1a, #000000);
+  border: 1px solid var(--border);
+  color: #eee;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 30;
+  padding: 0;
+}
+
+/* Content container */
+.main-content {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+  background: #1e1e1e;
+  border-radius: 8px;
+}
+
+/* Lists */
+ul, ol {
+  margin-left: 1.3rem;
+  padding-left: .5rem;
+  color: #ccc;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+table th, table td {
+  border: 1px solid #555;
+  padding: .8rem;
+  color: #eee;
+}
+
+table th {
+  background: #2a2a2a;
+  color: #88bbee;
+}
+table tr:nth-child(even) {
+  background: #1a1a1a;
 }
 
 /* Links */
@@ -37,43 +88,54 @@ pre {
   padding: 1rem;
 }
 
-/* Tables */
-table th {
-  background: #0e0e0e !important;
-  color: var(--primary);
+pre code {
+  color: #ff80ab !important;
 }
-/* Navbar */
+/* Buttons */
+.button {
+  background-color: var(--primary);
+  color: #000 !important;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+/* Navigation bar */
 .site-nav {
-  margin-bottom: 2rem;
-  font-size: 0.9rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #444;
+  font-weight: bold;
 }
 
 .site-nav a {
-  color: #66bb6a; /* accent color */
+  color: #66ccff;
   text-decoration: none;
-  margin-right: 1rem;
+  transition: color 0.2s ease;
 }
 
 .site-nav a:hover {
-  text-decoration: underline;
+  color: #ffffff;
 }
+
 /* Footer */
 .site-footer {
-  margin-top: 3rem;
-  margin-bottom: 2rem;
-  padding: 1rem 0;
   text-align: center;
-  font-size: 0.85rem;
+  padding: 1rem 0;
+  margin-top: 3rem;
+  border-top: 1px solid #444;
   color: #999;
-  border-top: 1px solid #333;
 }
-
 .site-footer a {
-  color: #66bb6a;
+  color: #66ccff;
   text-decoration: none;
 }
-
 .site-footer a:hover {
   text-decoration: underline;
 }
+
 /* ---- End of Custom Dark Mode Enhancements ---- */
