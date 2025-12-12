@@ -5,8 +5,9 @@ rouge:
   theme: github
 
 markdown: kramdown
-theme: null   # IMPORTANT
+theme: minima   # IMPORTANT
 plugins:
+  - jekyll-include-cache
   - jekyll-feed
   - jekyll-seo-tag
 
@@ -16,8 +17,8 @@ include:
   - _includes
   - assets
 
-baseurl: ""
-url: ""
+url: "https://obatechhub-inc.github.io"
+baseurl: "/Pixella-chatbot"
 
 defaults:
   - scope:

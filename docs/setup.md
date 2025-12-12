@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Setup and Configuration
+description: setup and configure Pixella Chatbot
 ---
 
 # Setup and Configuration

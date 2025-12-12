@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Installation
+description: installing Pixella Chatbot
 ---
 
 # Installation
@@ -112,7 +113,7 @@ You can verify that Pixella is installed correctly by running its version comman
 pixella --version
 ```
 
-You should see version `1.20.5` of Pixella displayed.
+You should see version `1.20.7` of Pixella displayed.
 
 ## Running the Chatbot
 

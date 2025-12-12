@@ -3,7 +3,7 @@
 **A powerful, production-ready chatbot system with CLI and Web UI, powered by Google Generative AI**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-1.20.5-blue)](version)
+[![Version](https://img.shields.io/badge/version-1.20.7-blue)](version)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status: Active](https://img.shields.io/badge/status-active-brightgreen)]()
 
@@ -623,5 +623,5 @@ Planned features:
 
 **Made with ❤️ by Pixella Contributors**
 
-Last updated: December 2025 - version 1.20.4 -> 1.20.5
+Last updated: December 2025 - version 1.20.5 -> 1.20.7
 Python 3.11+ | MIT License
