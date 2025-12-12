@@ -10,6 +10,11 @@
 
 set -e  # Exit on any error
 
+# If stdin is not a terminal, attach to tty
+if [ ! -t 0 ]; then
+    exec < /dev/tty
+fi
+
 # Trap to cleanup on error
 trap 'cleanup_on_error' ERR
 
