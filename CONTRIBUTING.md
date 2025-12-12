@@ -81,6 +81,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
             .env.bak
             .env.local
             .env.*.local
+            .env.template
 
         # IDEs
             .vscode/

@@ -1,12 +1,41 @@
-/* Admonition block container */
+/* Admonition block container with enhanced styling */
 .admonition {
-  background: #252525;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  padding: 1rem 1.2rem;
+  background: linear-gradient(135deg, #252525, #2a2a2a);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 1.2rem 1.5rem;
   border-left: 6px solid;
   margin: 1.5rem 0;
-  border-radius: 4px;
-} 
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admonition::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.admonition:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.admonition:hover::before {
+  opacity: 1;
+}
 /* Title */
 .admonition-title {
   font-weight: bold;
@@ -14,21 +43,92 @@
   text-transform: uppercase;
   font-size: 0.9rem;
   letter-spacing: 0.5px;
+  color: #fff;
+  display: flex;
+  align-items: center;
 }
 
-/* Types */
-.admonition.note      { border-color: #4aa3ff; }
-.admonition.warning   { border-color: #ffb300; }
-.admonition.tip       { border-color: #00e676; }
-.admonition.danger    { border-color: #ff5252; }
-.admonition.success   { border-color: #66bb6a; }
-.admonition.info      { border-color: #40c4ff; }
-.admonition.todo      { border-color: #ff80ab; }
+/* Types with enhanced colors */
+.admonition.note {
+  border-color: #4aa3ff;
+}
+.admonition.note::before {
+  background: linear-gradient(135deg, #4aa3ff, #6bb6ff);
+}
 
-/* Icons */
+.admonition.warning {
+  border-color: #ffb300;
+}
+.admonition.warning::before {
+  background: linear-gradient(135deg, #ffb300, #ffcc00);
+}
+
+.admonition.tip {
+  border-color: #00e676;
+}
+.admonition.tip::before {
+  background: linear-gradient(135deg, #00e676, #33eb91);
+}
+
+.admonition.danger {
+  border-color: #ff5252;
+}
+.admonition.danger::before {
+  background: linear-gradient(135deg, #ff5252, #ff7676);
+}
+
+.admonition.success {
+  border-color: #66bb6a;
+}
+.admonition.success::before {
+  background: linear-gradient(135deg, #66bb6a, #81c784);
+}
+
+.admonition.info {
+  border-color: #40c4ff;
+}
+.admonition.info::before {
+  background: linear-gradient(135deg, #40c4ff, #64d8ff);
+}
+
+.admonition.todo {
+  border-color: #ff80ab;
+}
+.admonition.todo::before {
+  background: linear-gradient(135deg, #ff80ab, #ff9fbf);
+}
+
+/* Icons with animation */
 .admonition-title::before {
   display: inline-block;
   margin-right: 0.5rem;
   font-family: "Font Awesome 5 Free";
   font-weight: 900;
+  transition: transform 0.3s ease;
+}
+
+.admonition.note .admonition-title::before {
+  content: "\f05a";
+} /* info-circle */
+.admonition.warning .admonition-title::before {
+  content: "\f071";
+} /* exclamation-triangle */
+.admonition.tip .admonition-title::before {
+  content: "\f0eb";
+} /* lightbulb */
+.admonition.danger .admonition-title::before {
+  content: "\f06a";
+} /* exclamation-circle */
+.admonition.success .admonition-title::before {
+  content: "\f058";
+} /* check-circle */
+.admonition.info .admonition-title::before {
+  content: "\f129";
+} /* info */
+.admonition.todo .admonition-title::before {
+  content: "\f14a";
+} /* list-check */
+
+.admonition:hover .admonition-title::before {
+  transform: scale(1.1);
 }

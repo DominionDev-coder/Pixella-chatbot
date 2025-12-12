@@ -10,6 +10,17 @@
 
 set -e  # Exit on any error
 
+# Trap to cleanup on error
+trap 'cleanup_on_error' ERR
+
+cleanup_on_error() {
+    print_error "Installation failed. Cleaning up..."
+    if [ "$INSTALLATION_MODE" = "remote" ] && [ -d "$PROJECT_ROOT" ]; then
+        rm -rf "$PROJECT_ROOT" 2>/dev/null || true
+    fi
+    exit 1
+}
+
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,13 +33,22 @@ NC='\033[0m' # No Color
 REPO_URL="https://github.com/DominionDev-coder/Pixella-chatbot"
 REPO_NAME="Pixella-chatbot"
 INSTALL_DIR="${HOME}/.pixella"
+VERSION=""  # Will be set by user selection
 
 # Global variables for OS and Python
 OS_TYPE=""
 PYTHON_CMD=""
-VENV_DIR=".venv"
+VENV_DIR=""  # Will be set by create_and_activate_venv
 VENV_ACTIVATE_CMD=""
 VENV_PYTHON_BIN=""
+
+# Version mapping - Update this when new releases are available
+declare -A VERSION_MAP
+VERSION_MAP["1.0.0"]="1.0.0"
+VERSION_MAP["1.20.0"]="1.20.0"
+VERSION_MAP["1.20.4"]="1.20.4"
+VERSION_MAP["1.20.5"]="1.20.5"
+VERSION_MAP["1.20.7"]="1.20.7"
 
 # Functions
 print_header() {
@@ -67,7 +87,7 @@ detect_os() {
             VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
             VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
             print_success "Detected macOS"
-            ;;;
+            ;;
         CYGWIN*|MINGW32*|MSYS*|windows*) 
             OS_TYPE="Windows"
             # WSL/Git Bash compatible activation
@@ -75,7 +95,7 @@ detect_os() {
             VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\"" # Use python.exe for clarity
             print_warning "Detected Windows. Using WSL/Git Bash compatible commands."
             print_warning "For native PowerShell/CMD, manual steps may be needed for PATH."
-            ;;;
+            ;;
         *)
             print_error "Unsupported OS: $(uname -s)"
             exit 1
@@ -104,30 +124,139 @@ detect_installation_mode() {
     fi
 }
 
+# Function to resolve version input
+resolve_version() {
+    local input="$1"
+    
+    # Handle special keywords
+    case "$input" in
+        latest)
+            echo "1.20.7"
+            return 0
+            ;;
+        prerelease)
+            echo "1.0.0"
+            return 0
+            ;;
+    esac
+    
+    # Check if exact version exists
+    if [[ -n "${VERSION_MAP[$input]}" ]]; then
+        echo "$input"
+        return 0
+    fi
+    
+    # Handle partial versions (e.g., "1.20" -> latest in 1.20.x)
+    if [[ "$input" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        local prefix="$input"
+        local latest_version=""
+        for version in "${!VERSION_MAP[@]}"; do
+            if [[ "$version" == "$prefix".* ]]; then
+                if [[ -z "$latest_version" ]] || [[ "$version" > "$latest_version" ]]; then
+                    latest_version="$version"
+                fi
+            fi
+        done
+        if [[ -n "$latest_version" ]]; then
+            echo "$latest_version"
+            return 0
+        fi
+    fi
+    
+    # If no match found
+    echo ""
+    return 1
+}
+
+select_version() {
+    print_step "Selecting Pixella version..."
+    
+    echo -e "${CYAN}Available versions:${NC}"
+    echo "  1.0.0   (prerelease)"
+    echo "  1.20.0, 1.20.4, 1.20.5, 1.20.7  (latest: 1.20.7)"
+    echo
+    echo -e "${CYAN}You can specify:${NC}"
+    echo "  - Full version (e.g., 1.20.7)"
+    echo "  - Partial version (e.g., 1.20 -> gets latest 1.20.x)"
+    echo "  - 'latest' -> gets the latest stable version"
+    echo "  - 'prerelease' -> gets the prerelease version"
+    echo
+    
+    while true; do
+        read -p "Enter version: " input
+        if [[ -z "$input" ]]; then
+            echo -e "${RED}Version cannot be empty.${NC}"
+            continue
+        fi
+        
+        VERSION=$(resolve_version "$input")
+        if [[ -n "$VERSION" ]]; then
+            print_success "Selected version: $VERSION"
+            break
+        else
+            echo -e "${RED}Invalid version '$input'. Please try again.${NC}"
+            echo -e "${YELLOW}Available options: 1.0.0, 1.20.0, 1.20.4, 1.20.5, 1.20.7, 1.20, 1.0, latest, prerelease${NC}"
+        fi
+    done
+}
+
 clone_repository() {
     print_step "Cloning Pixella repository..."
+    
+    # Record the selected version
+    echo "$VERSION" > "$INSTALL_DIR/.pixella_version" 2>/dev/null || true
     
     if [ -d "$PROJECT_ROOT" ]; then
         print_warning "Pixella directory already exists at $PROJECT_ROOT"
         read -p "Do you want to update it? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cd "$PROJECT_ROOT"
-            git pull origin main 2>/dev/null || print_warning "Git pull failed, will use existing files"
+            cd "$PROJECT_ROOT" || {
+                print_error "Failed to change to directory $PROJECT_ROOT"
+                exit 1
+            }
+            if ! git pull origin main 2>/dev/null; then
+                print_warning "Git pull failed, will use existing files"
+            fi
+            if ! git checkout "$VERSION" 2>/dev/null; then
+                print_warning "Could not checkout version $VERSION, using current"
+                VERSION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+            fi
         else
             print_success "Using existing installation at $PROJECT_ROOT"
+            if ! git checkout "$VERSION" 2>/dev/null; then
+                print_warning "Could not checkout version $VERSION, using current"
+                VERSION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+            fi
             return 0
         fi
     else
-        mkdir -p "$INSTALL_DIR"
-        git clone "$REPO_URL" "$PROJECT_ROOT" || {
-            print_error "Failed to clone repository"
-            print_error "Make sure git is installed and the URL is correct"
+        mkdir -p "$INSTALL_DIR" || {
+            print_error "Failed to create installation directory $INSTALL_DIR"
             exit 1
         }
+        if ! git clone "$REPO_URL" "$PROJECT_ROOT"; then
+            print_error "Failed to clone repository from $REPO_URL"
+            print_error "Please check your internet connection and repository URL"
+            exit 1
+        fi
+        cd "$PROJECT_ROOT" || {
+            print_error "Failed to change to cloned directory $PROJECT_ROOT"
+            exit 1
+        }
+        if ! git checkout "$VERSION"; then
+            print_error "Failed to checkout version $VERSION"
+            print_error "Available versions may have changed. Please check GitHub releases."
+            print_error "Attempting to continue with main branch..."
+            VERSION="main"
+            git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
+                print_error "Could not checkout main/master branch either"
+                exit 1
+            }
+        fi
     fi
     
-    print_success "Repository ready at $PROJECT_ROOT"
+    print_success "Repository ready at $PROJECT_ROOT (version $VERSION)"
 }
 
 manual_python_installation() {
@@ -256,39 +385,244 @@ cleanup_and_abort() {
 }
 
 
-create_and_activate_venv() {
-    print_step "Checking for virtual environment..."
-
-    if [ -d "$VENV_DIR" ]; then
-        print_warning "Virtual environment already exists. Reusing it."
-        eval "$VENV_ACTIVATE_CMD" || {
-            print_error "Failed to activate virtual environment using '$VENV_ACTIVATE_CMD'"
-            exit 1
-        }
-        print_success "Virtual environment activated."
-        PYTHON_CMD="$VENV_PYTHON_BIN"
-        return
+check_python_dependencies() {
+    # Check if required packages are installed in current Python environment
+    local python_cmd="$1"
+    
+    # Try to import all key packages from requirements.txt
+    if "$python_cmd" -c "
+import chromadb
+import langchain
+import streamlit
+import typer
+import rich
+import google.api_core
+try:
+    import langchain_google_genai
+except ImportError:
+    import langchain_google_genai
+try:
+    import dotenv
+except ImportError:
+    import python_dotenv
+" 2>/dev/null; then
+        return 0  # All dependencies found
     fi
+    
+    return 1  # Dependencies not found
+}
 
-    read -p "Create and use a virtual environment (.venv)? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_step "Creating and activating Python virtual environment ($VENV_DIR)..."
-        "$PYTHON_CMD" -m venv "$VENV_DIR" || {
-            print_error "Failed to create virtual environment"
-            exit 1
-        }
-        print_success "Virtual environment created."
+create_and_activate_venv() {
+    if [ "$INSTALLATION_MODE" = "local" ]; then
+        # Local installation - check existing environments
+        print_step "Checking Python environment and dependencies..."
         
-        eval "$VENV_ACTIVATE_CMD" || {
-            print_error "Failed to activate virtual environment using '$VENV_ACTIVATE_CMD'"
-            exit 1
-        }
-        print_success "Virtual environment activated."
+        # Check for existing virtual environment
+        local venv_found=""
+        if [ -d ".venv" ]; then
+            VENV_DIR=".venv"
+            venv_found="yes"
+        elif [ -d "venv" ]; then
+            VENV_DIR="venv"
+            venv_found="yes"
+        fi
         
-        PYTHON_CMD="$VENV_PYTHON_BIN"
+        if [ -n "$venv_found" ]; then
+            print_success "Found existing virtual environment ($VENV_DIR)"
+            
+            # Set activation commands based on OS
+            if [ "$OS_TYPE" = "Windows" ]; then
+                VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+                VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\""
+            else
+                VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+                VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+            fi
+            
+            # Try to activate and check dependencies
+            if eval "$VENV_ACTIVATE_CMD" 2>/dev/null; then
+                if check_python_dependencies "$VENV_PYTHON_BIN"; then
+                    print_success "Virtual environment has required dependencies."
+                    PYTHON_CMD="$VENV_PYTHON_BIN"
+                    
+                    # Even if everything is good, ask about version update
+                    echo
+                    read -p "Do you want to update or downgrade Pixella version? (y/n) " -n 1 -r
+                    echo
+                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                        # Check current version
+                        local current_version=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+                        echo -e "${CYAN}Current version: $current_version${NC}"
+                        select_version
+                        
+                        # If user selected a different version, checkout and update
+                        if [[ "$VERSION" != "$current_version" ]]; then
+                            print_step "Switching to version $VERSION..."
+                            if git checkout "$VERSION" 2>/dev/null; then
+                                print_success "Switched to version $VERSION"
+                                # Reinstall dependencies for new version
+                                print_step "Reinstalling dependencies for new version..."
+                                "$PYTHON_CMD" -m pip install --upgrade pip setuptools wheel
+                                "$PYTHON_CMD" -m pip install -r "$PROJECT_ROOT/requirements.txt"
+                                print_success "Dependencies updated"
+                            else
+                                print_warning "Could not checkout version $VERSION, staying on current"
+                                VERSION="$current_version"
+                            fi
+                        fi
+                    fi
+                    
+                    return 0
+                else
+                    print_warning "Virtual environment exists but missing dependencies."
+                    eval "deactivate" 2>/dev/null || true
+                fi
+            else
+                print_warning "Cannot activate existing virtual environment."
+            fi
+        fi
+        
+        # No working venv found, check system Python
+        print_step "Checking system Python environment..."
+        if check_python_dependencies "$PYTHON_CMD"; then
+            print_success "System Python has required dependencies. Using system Python."
+            return 0
+        else
+            print_warning "System Python missing required dependencies."
+        fi
+        
+        # Neither venv nor system has dependencies - offer solutions
+        echo
+        echo "Choose installation option:"
+        echo "1. Create virtual environment (.venv) and install dependencies"
+        echo "2. Install dependencies in system Python (not recommended)"
+        echo
+        
+        while true; do
+            read -p "Select option (1 or 2): " choice
+            case $choice in
+                1)
+                    print_step "Creating virtual environment (.venv)..."
+                    VENV_DIR=".venv"
+                    if [ "$OS_TYPE" = "Windows" ]; then
+                        VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+                        VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\""
+                    else
+                        VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+                        VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+                    fi
+                    
+                    "$PYTHON_CMD" -m venv "$VENV_DIR" || {
+                        print_error "Failed to create virtual environment"
+                        exit 1
+                    }
+                    print_success "Virtual environment created."
+                    
+                    eval "$VENV_ACTIVATE_CMD" || {
+                        print_error "Failed to activate virtual environment"
+                        exit 1
+                    }
+                    print_success "Virtual environment activated."
+                    
+                    PYTHON_CMD="$VENV_PYTHON_BIN"
+                    break
+                    ;;
+                2)
+                    print_warning "Installing dependencies in system Python (not recommended)."
+                    print_warning "This may affect other Python applications on your system."
+                    read -p "Are you sure? (y/n) " -n 1 -r
+                    echo
+                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                        break
+                    fi
+                    # If not sure, loop back to choice
+                    ;;
+                *)
+                    echo -e "${RED}Invalid choice. Please select 1 or 2.${NC}"
+                    ;;
+            esac
+        done
+        
     else
-        print_warning "Skipping virtual environment. Using system Python."
+        # Remote installation - ask about venv creation
+        print_step "Setting up Python environment..."
+        
+        if [ -d ".venv" ]; then
+            print_warning "Virtual environment already exists."
+            read -p "Do you want to recreate it? (y/n) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                rm -rf ".venv"
+                create_venv="yes"
+            else
+                # Try to reuse existing venv
+                VENV_DIR=".venv"
+                if [ "$OS_TYPE" = "Windows" ]; then
+                    VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+                    VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\""
+                else
+                    VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+                    VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+                fi
+                
+                if eval "$VENV_ACTIVATE_CMD" 2>/dev/null; then
+                    print_success "Reusing existing virtual environment."
+                    PYTHON_CMD="$VENV_PYTHON_BIN"
+                    return 0
+                else
+                    print_warning "Cannot activate existing venv, will create new one."
+                    rm -rf ".venv"
+                    create_venv="yes"
+                fi
+            fi
+        else
+            echo "Do you want to create a virtual environment? (recommended)"
+            echo "1. Yes, create virtual environment (.venv)"
+            echo "2. No, use system Python"
+            echo
+            
+            while true; do
+                read -p "Select option (1 or 2): " choice
+                case $choice in
+                    1)
+                        create_venv="yes"
+                        break
+                        ;;
+                    2)
+                        print_warning "Using system Python (not recommended)."
+                        return 0
+                        ;;
+                    *)
+                        echo -e "${RED}Invalid choice. Please select 1 or 2.${NC}"
+                        ;;
+                esac
+            done
+        fi
+        
+        if [ "$create_venv" = "yes" ]; then
+            VENV_DIR=".venv"
+            if [ "$OS_TYPE" = "Windows" ]; then
+                VENV_ACTIVATE_CMD="source \"$VENV_DIR/Scripts/activate\""
+                VENV_PYTHON_BIN="\"$VENV_DIR/Scripts/python.exe\""
+            else
+                VENV_ACTIVATE_CMD="source \"$VENV_DIR/bin/activate\""
+                VENV_PYTHON_BIN="\"$VENV_DIR/bin/python\""
+            fi
+            
+            "$PYTHON_CMD" -m venv "$VENV_DIR" || {
+                print_error "Failed to create virtual environment"
+                exit 1
+            }
+            print_success "Virtual environment created."
+            
+            eval "$VENV_ACTIVATE_CMD" || {
+                print_error "Failed to activate virtual environment"
+                exit 1
+            }
+            print_success "Virtual environment activated."
+            
+            PYTHON_CMD="$VENV_PYTHON_BIN"
+        fi
     fi
 }
 
@@ -300,10 +634,28 @@ check_dependencies() {
     if [ "$INSTALLATION_MODE" = "remote" ]; then
         if ! command -v git &> /dev/null; then
             print_error "git is required for remote installation"
+            print_error "Please install git and try again"
             exit 1
         fi
         print_success "git found"
     fi
+    
+    # Check for curl (for potential future use)
+    if command -v curl &> /dev/null; then
+        print_success "curl found"
+    else
+        print_warning "curl not found - some features may not work"
+    fi
+    
+    # Check for basic commands
+    local required_cmds=("mkdir" "cp" "rm" "echo" "cat")
+    for cmd in "${required_cmds[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            print_error "Required command '$cmd' not found"
+            exit 1
+        fi
+    done
+    print_success "Basic system commands available"
 }
 
 install_requirements() {
@@ -519,6 +871,42 @@ main() {
     
     detect_os
     detect_installation_mode
+    
+    if [ "$INSTALLATION_MODE" = "remote" ]; then
+        # Check if user has installed before
+        if [ -f "$INSTALL_DIR/.pixella_version" ]; then
+            local saved_version=$(cat "$INSTALL_DIR/.pixella_version" 2>/dev/null)
+            if [[ -n "$saved_version" ]]; then
+                echo -e "${CYAN}Previous installation used version: $saved_version${NC}"
+                echo "Do you want to:"
+                echo "1. Keep the same version ($saved_version)"
+                echo "2. Update/downgrade to a different version"
+                echo
+                
+                while true; do
+                    read -p "Select option (1 or 2): " choice
+                    case $choice in
+                        1)
+                            VERSION="$saved_version"
+                            print_success "Using version: $VERSION"
+                            break
+                            ;;
+                        2)
+                            select_version
+                            break
+                            ;;
+                        *)
+                            echo -e "${RED}Invalid choice. Please select 1 or 2.${NC}"
+                            ;;
+                    esac
+                done
+            else
+                select_version
+            fi
+        else
+            select_version
+        fi
+    fi
     
     check_python_version
     check_dependencies
