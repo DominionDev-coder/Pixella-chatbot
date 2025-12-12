@@ -42,35 +42,67 @@ VENV_DIR=""  # Will be set by create_and_activate_venv
 VENV_ACTIVATE_CMD=""
 VENV_PYTHON_BIN=""
 
-# Version mapping - Update this when new releases are available
-declare -A VERSION_MAP
-VERSION_MAP["1.0.0"]="1.0.0"
-VERSION_MAP["1.20.0"]="1.20.0"
-VERSION_MAP["1.20.4"]="1.20.4"
-VERSION_MAP["1.20.5"]="1.20.5"
-VERSION_MAP["1.20.7"]="1.20.7"
+# Version list - Update this when new releases are available
+VERSION_LIST="1.0.0 1.20.0 1.20.4 1.20.5 1.20.7"
+
+# Function to check if version exists in list
+version_exists() {
+    local version="$1"
+    for v in $VERSION_LIST; do
+        if [ "$v" = "$version" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Function to find latest version for a prefix (e.g., "1.20" -> "1.20.7")
+find_latest_for_prefix() {
+    local prefix="$1"
+    local latest_version=""
+    for version in $VERSION_LIST; do
+        case "$version" in
+            "$prefix".*)
+                if [ -z "$latest_version" ]; then
+                    latest_version="$version"
+                else
+                    # Simple string comparison for version numbers
+                    if [ "$version" \> "$latest_version" ]; then
+                        latest_version="$version"
+                    fi
+                fi
+                ;;
+        esac
+    done
+    echo "$latest_version"
+}
 
 # Functions
+# Portable print function that works with both bash and POSIX sh
+print() {
+    printf '%b\n' "$1"
+}
+
 print_header() {
-    echo -e "\n${CYAN}════════════════════════════════════════════════════════════${NC}"
-    echo -e "${CYAN}      🤖 PIXELLA - Installation & Setup Script${NC}"
-    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}\n"
+    print "\n${CYAN}════════════════════════════════════════════════════════════${NC}"
+    print "${CYAN}      🤖 PIXELLA - Installation & Setup Script${NC}"
+    print "${CYAN}════════════════════════════════════════════════════════════${NC}\n"
 }
 
 print_step() {
-    echo -e "${BLUE}→${NC} $1"
+    print "${BLUE}→${NC} $1"
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    print "${GREEN}✓ $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
+    print "${YELLOW}⚠${NC} $1"
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    print "${RED}✗ $1${NC}"
 }
 
 detect_os() {
@@ -141,23 +173,16 @@ resolve_version() {
     esac
     
     # Check if exact version exists
-    if [[ -n "${VERSION_MAP[$input]}" ]]; then
+    if version_exists "$input"; then
         echo "$input"
         return 0
     fi
     
     # Handle partial versions (e.g., "1.20" -> latest in 1.20.x)
-    if [[ "$input" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        local prefix="$input"
-        local latest_version=""
-        for version in "${!VERSION_MAP[@]}"; do
-            if [[ "$version" == "$prefix".* ]]; then
-                if [[ -z "$latest_version" ]] || [[ "$version" > "$latest_version" ]]; then
-                    latest_version="$version"
-                fi
-            fi
-        done
-        if [[ -n "$latest_version" ]]; then
+    if echo "$input" | grep -q '^[0-9]\+\.[0-9]\+$'; then
+        local latest_version
+        latest_version=$(find_latest_for_prefix "$input")
+        if [ -n "$latest_version" ]; then
             echo "$latest_version"
             return 0
         fi
@@ -171,11 +196,11 @@ resolve_version() {
 select_version() {
     print_step "Selecting Pixella version..."
     
-    echo -e "${CYAN}Available versions:${NC}"
+    print "${CYAN}Available versions:${NC}"
     echo "  1.0.0   (prerelease)"
     echo "  1.20.0, 1.20.4, 1.20.5, 1.20.7  (latest: 1.20.7)"
     echo
-    echo -e "${CYAN}You can specify:${NC}"
+    print "${CYAN}You can specify:${NC}"
     echo "  - Full version (e.g., 1.20.7)"
     echo "  - Partial version (e.g., 1.20 -> gets latest 1.20.x)"
     echo "  - 'latest' -> gets the latest stable version"
@@ -184,18 +209,18 @@ select_version() {
     
     while true; do
         read -p "Enter version: " input
-        if [[ -z "$input" ]]; then
-            echo -e "${RED}Version cannot be empty.${NC}"
+        if [ -z "$input" ]; then
+            print "${RED}Version cannot be empty.${NC}"
             continue
         fi
         
         VERSION=$(resolve_version "$input")
-        if [[ -n "$VERSION" ]]; then
+        if [ -n "$VERSION" ]; then
             print_success "Selected version: $VERSION"
             break
         else
-            echo -e "${RED}Invalid version '$input'. Please try again.${NC}"
-            echo -e "${YELLOW}Available options: 1.0.0, 1.20.0, 1.20.4, 1.20.5, 1.20.7, 1.20, 1.0, latest, prerelease${NC}"
+            print "${RED}Invalid version '$input'. Please try again.${NC}"
+            print "${YELLOW}Available options: 1.0.0, 1.20.0, 1.20.4, 1.20.5, 1.20.7, 1.20, 1.0, latest, prerelease${NC}"
         fi
     done
 }
@@ -210,7 +235,8 @@ clone_repository() {
         print_warning "Pixella directory already exists at $PROJECT_ROOT"
         read -p "Do you want to update it? (y/n) " -n 1 -r
         echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        case $REPLY in
+            [Yy]* )
             cd "$PROJECT_ROOT" || {
                 print_error "Failed to change to directory $PROJECT_ROOT"
                 exit 1
@@ -222,14 +248,16 @@ clone_repository() {
                 print_warning "Could not checkout version $VERSION, using current"
                 VERSION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
             fi
-        else
+            ;;
+            * )
             print_success "Using existing installation at $PROJECT_ROOT"
             if ! git checkout "$VERSION" 2>/dev/null; then
                 print_warning "Could not checkout version $VERSION, using current"
                 VERSION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
             fi
             return 0
-        fi
+            ;;
+        esac
     else
         mkdir -p "$INSTALL_DIR" || {
             print_error "Failed to create installation directory $INSTALL_DIR"
@@ -266,7 +294,8 @@ manual_python_installation() {
     while true; do
         read -p "Have you installed Python 3.11? (yes/no) " -n 1 -r
         echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        case $REPLY in
+            [Yy]* )
             if command -v python3.11 &> /dev/null; then
                 print_success "Python 3.11 is now installed."
                 PYTHON_CMD="python3.11"
@@ -275,21 +304,29 @@ manual_python_installation() {
                 print_error "Python 3.11 not found in PATH."
                 read -p "Continue with another Python version? (y/n) " -n 1 -r
                 echo
-                if [[ $REPLY =~ ^[Nn]$ ]]; then
-                    cleanup_and_abort
-                else
-                    return 1
-                fi
+                case $REPLY in
+                    [Nn]* )
+                        cleanup_and_abort
+                        ;;
+                    * )
+                        return 1
+                        ;;
+                esac
             fi
-        elif [[ $REPLY =~ ^[Nn]$ ]]; then
+            ;;
+            [Nn]* )
             read -p "Continue with another Python version? (y/n) " -n 1 -r
             echo
-            if [[ $REPLY =~ ^[Nn]$ ]]; then
-                cleanup_and_abort
-            else
-                return 1
-            fi
-        fi
+            case $REPLY in
+                [Nn]* )
+                    cleanup_and_abort
+                    ;;
+                * )
+                    return 1
+                    ;;
+            esac
+            ;;
+        esac
     done
 }
 
@@ -346,7 +383,8 @@ check_python_version() {
     print_warning "Python 3.11 is recommended."
     read -p "Python 3.11 not found. Install it now? (y/n) " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    case $REPLY in
+        [Yy]* )
         install_python3_11
         if [ $? -ne 0 ]; then
             # If installation fails and user wants to continue with another version
@@ -360,7 +398,10 @@ check_python_version() {
         else
             return
         fi
-    fi
+        ;;
+        * )
+        ;;
+    esac
     
     for cmd in python3.12 python3.13; do
         if command -v "$cmd" &> /dev/null; then
@@ -449,14 +490,15 @@ create_and_activate_venv() {
                     echo
                     read -p "Do you want to update or downgrade Pixella version? (y/n) " -n 1 -r
                     echo
-                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    case $REPLY in
+                        [Yy]* )
                         # Check current version
                         local current_version=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-                        echo -e "${CYAN}Current version: $current_version${NC}"
+                        print "${CYAN}Current version: $current_version${NC}"
                         select_version
                         
                         # If user selected a different version, checkout and update
-                        if [[ "$VERSION" != "$current_version" ]]; then
+                        if [ "$VERSION" != "$current_version" ]; then
                             print_step "Switching to version $VERSION..."
                             if git checkout "$VERSION" 2>/dev/null; then
                                 print_success "Switched to version $VERSION"
@@ -470,7 +512,10 @@ create_and_activate_venv() {
                                 VERSION="$current_version"
                             fi
                         fi
-                    fi
+                        ;;
+                        * )
+                        ;;
+                    esac
                     
                     return 0
                 else
@@ -532,13 +577,15 @@ create_and_activate_venv() {
                     print_warning "This may affect other Python applications on your system."
                     read -p "Are you sure? (y/n) " -n 1 -r
                     echo
-                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    case $REPLY in
+                        [Yy]* )
                         break
-                    fi
+                        ;;
+                    esac
                     # If not sure, loop back to choice
                     ;;
                 *)
-                    echo -e "${RED}Invalid choice. Please select 1 or 2.${NC}"
+                    print "${RED}Invalid choice. Please select 1 or 2.${NC}"
                     ;;
             esac
         done
@@ -551,10 +598,12 @@ create_and_activate_venv() {
             print_warning "Virtual environment already exists."
             read -p "Do you want to recreate it? (y/n) " -n 1 -r
             echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
+            case $REPLY in
+                [Yy]* )
                 rm -rf ".venv"
                 create_venv="yes"
-            else
+                ;;
+                * )
                 # Try to reuse existing venv
                 VENV_DIR=".venv"
                 if [ "$OS_TYPE" = "Windows" ]; then
@@ -574,7 +623,8 @@ create_and_activate_venv() {
                     rm -rf ".venv"
                     create_venv="yes"
                 fi
-            fi
+                ;;
+            esac
         else
             echo "Do you want to create a virtual environment? (recommended)"
             echo "1. Yes, create virtual environment (.venv)"
@@ -593,7 +643,7 @@ create_and_activate_venv() {
                         return 0
                         ;;
                     *)
-                        echo -e "${RED}Invalid choice. Please select 1 or 2.${NC}"
+                        print "${RED}Invalid choice. Please select 1 or 2.${NC}"
                         ;;
                 esac
             done
@@ -841,9 +891,9 @@ verify_installation() {
 
 print_next_steps() {
     echo
-    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
-    echo -e "${CYAN}      ✓ Installation Complete!${NC}"
-    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
+    print "${CYAN}════════════════════════════════════════════════════════════${NC}"
+    print "${CYAN}      ✓ Installation Complete!${NC}"
+    print "${CYAN}════════════════════════════════════════════════════════════${NC}"
     echo
     echo "Next steps:"
     echo
@@ -872,12 +922,29 @@ main() {
     detect_os
     detect_installation_mode
     
-    if [ "$INSTALLATION_MODE" = "remote" ]; then
+    # Ask for version selection in both local and remote modes
+    if [ "$INSTALLATION_MODE" = "local" ]; then
+        print "${CYAN}Local installation detected.${NC}"
+        echo "You can select a specific version to use or stay on current."
+        select_version
+        
+        # For local mode, checkout the selected version if different from current
+        local current_version=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+        if [ "$VERSION" != "$current_version" ] && [ "$VERSION" != "main" ] && [ "$VERSION" != "latest" ]; then
+            print_step "Switching to version $VERSION..."
+            if git checkout "$VERSION" 2>/dev/null; then
+                print_success "Switched to version $VERSION"
+            else
+                print_warning "Could not checkout version $VERSION, staying on current ($current_version)"
+                VERSION="$current_version"
+            fi
+        fi
+    else
         # Check if user has installed before
         if [ -f "$INSTALL_DIR/.pixella_version" ]; then
             local saved_version=$(cat "$INSTALL_DIR/.pixella_version" 2>/dev/null)
-            if [[ -n "$saved_version" ]]; then
-                echo -e "${CYAN}Previous installation used version: $saved_version${NC}"
+            if [ -n "$saved_version" ]; then
+                print "${CYAN}Previous installation used version: $saved_version${NC}"
                 echo "Do you want to:"
                 echo "1. Keep the same version ($saved_version)"
                 echo "2. Update/downgrade to a different version"
@@ -896,7 +963,7 @@ main() {
                             break
                             ;;
                         *)
-                            echo -e "${RED}Invalid choice. Please select 1 or 2.${NC}"
+                            print "${RED}Invalid choice. Please select 1 or 2.${NC}"
                             ;;
                     esac
                 done
