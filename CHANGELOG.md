@@ -11,7 +11,7 @@ Changes and fixes are recorded for a release starting from the commit after last
 ## Pixella Chatbot 1.20 Changes
 
 ### [1.20.7](https://github.com/ObaTechHub-inc/Pixella-chatbot/release/1.20.7) - latest release
-- [Commit and Minor Changes](): Release Changelog and Finalize Pixella Chatbot 1.20
+- [Commit and Minor Changes](https://github.com/ObaTechHub-inc/Pixella-chatbot/commit/c55fd0dd9953cba2ecbe36bad245712715d8acad): Release Changelog and Finalize Pixella Chatbot 1.20
 - [Fix](https://github.com/ObaTechHub-inc/Pixella-chatbot/commit/5d4b28617e432b8f554227b9e4d002b4d2d5f08d): Fixed issue#3
 - [issue#3](https://github.com/ObaTechHub-inc/Pixella-chatbot/issues/3) - Redesign the Docs Page
 
