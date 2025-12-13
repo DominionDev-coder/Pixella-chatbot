@@ -1,7 +1,6 @@
 ---
 layout: default
 title: What's New
-description: What's new in Pixella Chatbot v1.20 (1.20.7)
 ---
 
 # What's New in Pixella v1.20 (1.20.7)

@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Get Started
-description: get started with Pixella Chatbot using CLI and Web UI
 ---
 
 # Getting Started with Pixella

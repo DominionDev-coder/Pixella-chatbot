@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Installation
-description: installing Pixella Chatbot
 ---
 
 # Installation
@@ -33,10 +32,10 @@ or
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ObaTechHub-inc/Pixella-chatbot/main/scripts/install.sh | bash
 ```
-or
+Those commands may fail, try this instead:
 
 ```bash
-bash -c 'bash <(curl -fsSL https://raw.githubusercontent.com/ObaTechHub-inc/Pixella-chatbot/main/scripts/install.sh)'
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/ObaTechHub-inc/Pixella-chatbot/main/scripts/install.sh)"
 ```
 
 After the script completes, follow the prompts for initial configuration.

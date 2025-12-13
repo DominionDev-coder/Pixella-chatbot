@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Home
-description: Documentation for Pixella Chatbot
 ---
 
 # Welcome to PixelAI Docs

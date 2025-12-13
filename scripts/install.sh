@@ -14,7 +14,7 @@ exec </dev/tty || true
 
 # Determine if running in interactive mode
 INTERACTIVE=1
-if [ ! -t 0 ] && [ ! -t 1 ]; then
+if [ ! -t 0 ] || [ ! -r /dev/tty ]; then
     INTERACTIVE=0
 fi
 
@@ -31,15 +31,23 @@ ask() {
         return
     fi
 
-    printf '%s' "$prompt" > /dev/tty
-    [ -n "$default" ] && printf ' [%s]' "$default" > /dev/tty
-    printf ': ' > /dev/tty
+    # Use /dev/tty for reading interactively
+    while true; do
+        printf '%s' "$prompt" > /dev/tty
+        [ -n "$default" ] && printf ' [%s]' "$default" > /dev/tty
+        printf ': ' > /dev/tty
 
-    if read -r input < /dev/tty; then
-        eval "$var=\"${input:-$default}\""
-    else
-        eval "$var=\"$default\""
-    fi
+        if read -r input < /dev/tty; then
+            input="${input:-$default}"  # Use default if empty
+            break
+        else
+            print_warning "Cannot read input. Using default [$default]"
+            input="$default"
+            break
+        fi
+    done
+
+    eval "$var=\"$input\""
 }
 
 
@@ -1064,9 +1072,26 @@ print_next_steps() {
     echo
 }
 
+# Function to print what the script will ask the user
+print_questions_info() {
+    print "${YELLOW}ℹ${NC} ${CYAN}What this script will ask you:${NC}"
+    echo
+    print "  ${BLUE}•${NC} Version selection (latest, specific version, or current)"
+    print "  ${BLUE}•${NC} Whether to update existing installation (if applicable)"
+    print "  ${BLUE}•${NC} Python 3.11 installation confirmation (if not found)"
+    print "  ${BLUE}•${NC} Whether to continue with alternative Python versions"
+    print "  ${BLUE}•${NC} Google API Key (optional, for enhanced features)"
+    print "  ${BLUE}•${NC} Various confirmations for installation steps"
+    echo
+    print "${YELLOW}Note:${NC} You can press Enter to accept default values (shown in brackets)"
+    echo
+}
+
 # Main installation flow
 main() {
     print_header
+    
+    print_questions_info
     
     detect_os
     detect_installation_mode
