@@ -9,6 +9,7 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  color: #e0e0e0; /* Ensures content text is visible on dark background */
 }
 
 /* Decorative top border */

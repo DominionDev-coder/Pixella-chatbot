@@ -52,7 +52,7 @@ kramdown:
   input: GFM # Enables GitHub-Flavored Markdown.
   hard_wrap: false
   syntax_highlighter_opts:
-    line_numbers: true # Enables line numbers in code blocks.
+    line_numbers: false # Disabling to prevent "1" from being copied.
 
 # ==========================================================================
 # Page Defaults

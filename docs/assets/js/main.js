@@ -89,27 +89,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    // Documentation sidebar functionality
-    const sidebarToggle = document.querySelector(".docs-sidebar-toggle");
-    const sidebar = document.querySelector(".docs-sidebar");
-
-    if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener("click", function () {
-            sidebar.classList.toggle("open");
-            const expanded = sidebar.classList.contains("open");
-            this.setAttribute("aria-expanded", expanded);
-        });
-
-        document.addEventListener("click", function (e) {
-            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                if (sidebar.classList.contains("open")) {
-                    sidebar.classList.remove("open");
-                    sidebarToggle.setAttribute("aria-expanded", "false");
-                }
-            }
-        });
-    }
-
     // Active navigation highlighting for sidebar
     const sidebarLinks = document.querySelectorAll(".docs-sidebar a");
     sidebarLinks.forEach((link) => {
@@ -130,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
       generateSidebarTOC();
     }
 
-    // Initialize code copying (essential for mobile)
+    // Initialize code copying
     initializeCodeCopying();
   });
 
@@ -253,20 +232,6 @@ document.addEventListener("DOMContentLoaded", function () {
       block.parentNode.insertBefore(wrapper, block);
       wrapper.appendChild(block);
       wrapper.appendChild(copyButton);
-    });
-
-    // Handle inline code (code elements not inside pre)
-    const inlineCodes = document.querySelectorAll("code");
-    inlineCodes.forEach((code) => {
-      if (code.closest("pre")) return; // Skip code inside pre blocks
-
-      code.style.cursor = "pointer";
-      code.title = "Click to copy";
-
-      code.addEventListener("click", function () {
-        copyToClipboard(this.textContent.trim());
-        showCopyFeedback(this);
-      });
     });
   }
 
