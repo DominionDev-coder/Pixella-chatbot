@@ -337,22 +337,46 @@ export_to_path() {
   step "Configuring PATH..."
 
   BIN_DIR="$PROJECT_ROOT/bin"
-  SHELL_RC="$HOME/.bashrc"
-  [ -n "${ZSH_VERSION:-}" ] && SHELL_RC="$HOME/.zshrc"
 
-  grep -q "# added by pixella chatbot install script" "$SHELL_RC" 2>/dev/null && {
-    ok "PATH already configured"
+  # Detect user shell
+  USER_SHELL="$(basename "$SHELL")"
+  case "$USER_SHELL" in
+    bash)
+      [ -f "$HOME/.bashrc" ] && SHELL_RC="$HOME/.bashrc" || SHELL_RC="$HOME/.bash_profile"
+      ;;
+    zsh)
+      SHELL_RC="$HOME/.zshrc"
+      ;;
+    fish)
+      SHELL_RC="$HOME/.config/fish/config.fish"
+      ;;
+    *)
+      SHELL_RC="$HOME/.profile"
+      ;;
+  esac
+
+  # Check if already exported
+  if grep -q "# added by Pixella Chatbot install script" "$SHELL_RC" 2>/dev/null; then
+    ok "PATH already configured in $SHELL_RC"
     return
-  }
+  fi
 
+  # Append export block
   {
     echo ""
-    echo "# added by pixella chatbot install script"
-    echo "export PATH=\"$BIN_DIR:\$PATH\""
+    echo "# added by Pixella Chatbot install script"
+    case "$USER_SHELL" in
+      fish)
+        echo "set -gx PATH $BIN_DIR \$PATH"
+        ;;
+      *)
+        echo "export PATH=\"$BIN_DIR:\$PATH\""
+        ;;
+    esac
   } >> "$SHELL_RC"
 
-  ok "PATH updated"
-  warn "Restart terminal or run: source ~/.bashrc"
+  ok "PATH updated in $SHELL_RC"
+  warn "Restart terminal or run: source $SHELL_RC"
 }
 
 ###############################################################################
