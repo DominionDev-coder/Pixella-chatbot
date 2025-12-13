@@ -15,9 +15,9 @@ fi
 # Globals
 ###############################################################################
 REPO_URL="https://github.com/DominionDev-coder/Pixella-chatbot"
-REPO_NAME="Pixella-chatbot"
 INSTALL_DIR="$HOME/.pixella"
-PROJECT_ROOT=""
+REPO_NAME="Pixella-chatbot"
+PROJECT_ROOT="$INSTALL_DIR/$REPO_NAME"
 INSTALLATION_MODE=""
 VERSION=""
 OS_TYPE=""
@@ -136,6 +136,20 @@ detect_os() {
 }
 
 ###############################################################################
+# Git detection
+###############################################################################
+check_git() {
+  step "Checking Git installation..."
+  if ! command -v git >/dev/null 2>&1; then
+    err "Git is required but not installed."
+    err "Please install Git and re-run the installer."
+    exit 1
+  fi
+  ok "Git found"
+}
+
+
+###############################################################################
 # Installation mode
 ###############################################################################
 detect_installation_mode() {
@@ -144,7 +158,7 @@ detect_installation_mode() {
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   SCRIPT_PARENT="$(dirname "$SCRIPT_DIR")"
 
-  if [ -f "$SCRIPT_PARENT/requirements.txt" ] && [ -f "$SCRIPT_PARENT/main.py" ]; then
+  if [ -f "$SCRIPT_PARENT/requirements.txt" ] && [ -d "$SCRIPT_PARENT/.git" ]; then
     INSTALLATION_MODE="local"
     PROJECT_ROOT="$SCRIPT_PARENT"
     ok "Local installation detected"
@@ -162,10 +176,10 @@ select_version() {
   step "Selecting Pixella version..."
 
   local tags
-  tags="$(git ls-remote --tags "$REPO_URL" | awk -F/ '{print $NF}' | grep -v '\^{}' | sort -V)"
+  tags="$(git ls-remote --tags "$REPO_URL" 2>/dev/null | awk -F/ '{print $NF}' | grep -v '\^{}' | sort -V || true)"
 
   if [ -z "$tags" ]; then
-    err "Unable to fetch versions"
+    err "Failed to fetch versions (network or GitHub issue)."
     exit 1
   fi
 
@@ -229,23 +243,28 @@ clone_repository() {
         cd "$PROJECT_ROOT"
         git fetch origin
         git fetch --tags --force
-        git pull origin main || true
+        git pull || true
         ;;
       *)
         ok "Using existing repository"
-        cd "$PROJECT_ROOT"
         ;;
     esac
   else
     git clone "$REPO_URL" "$PROJECT_ROOT"
-    cd "$PROJECT_ROOT"
   fi
 
+  cd "$PROJECT_ROOT"
   git fetch --tags --force
   git checkout "$VERSION"
 
+  if [ ! -f "$PROJECT_ROOT/requirements.txt" ]; then
+    err "Invalid Pixella project structure, please report this error on GitHub, We'll fix it"
+    exit 1
+  fi
+
   ok "Repository ready ($VERSION)"
 }
+
 
 ###############################################################################
 # Virtual environment
@@ -257,7 +276,12 @@ create_and_activate_venv() {
   case "$choice" in
     y|Y)
       VENV_DIR=".venv"
-      "$PYTHON_CMD" -m venv "$VENV_DIR"
+      if [ -d "$VENV_DIR" ]; then
+        warn "Virtual environment already exists, reusing it"
+      else
+        "$PYTHON_CMD" -m venv "$VENV_DIR"
+      fi
+
 
       if [ "$OS_TYPE" = "Windows" ]; then
         VENV_ACTIVATE_CMD="source $VENV_DIR/Scripts/activate"
@@ -314,6 +338,7 @@ export_to_path() {
 
   BIN_DIR="$PROJECT_ROOT/bin"
   SHELL_RC="$HOME/.bashrc"
+  [ -n "${ZSH_VERSION:-}" ] && SHELL_RC="$HOME/.zshrc"
 
   grep -q "# added by pixella chatbot install script" "$SHELL_RC" 2>/dev/null && {
     ok "PATH already configured"
@@ -352,12 +377,18 @@ main() {
 
   detect_os
   detect_installation_mode
+  check_git
   select_version
   check_python_version
 
   [ "$INSTALLATION_MODE" = "remote" ] && clone_repository
 
   cd "$PROJECT_ROOT"
+  if [ ! -f "requirements.txt" ]; then
+    err "Invalid Pixella project structure. please report this error on GitHub, We'll fix it"
+    exit 1
+  fi
+
   create_and_activate_venv
   install_requirements
   setup_env_file
