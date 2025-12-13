@@ -135,6 +135,8 @@ detect_os() {
   esac
 }
 
+
+
 ###############################################################################
 # Git detection
 ###############################################################################
@@ -148,6 +150,30 @@ check_git() {
   ok "Git found"
 }
 
+
+#################################################################################
+# Detect Python version and command, Update the script and bin/pixella
+#################################################################################
+check_python_version() {
+  step "Checking Python installation..."
+
+  for cmd in python3.11 python3.12 python3.13; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+      PYTHON_CMD="$cmd"
+      ok "Using $PYTHON_CMD"
+      return
+    fi
+
+  done
+
+  step "updating bin/pixella Python command..."
+  sed -i.bak "s|^PYTHON_CMD=.*$|PYTHON_CMD=\"python3.11\"|" "$PROJECT_ROOT/bin/pixella" || true
+  rm -f "$PROJECT_ROOT/bin/pixella.bak"
+  ok "bin/pixella updated to use detected system Python"
+
+  err "Python 3.11+ is required"
+  exit 1
+}
 
 ###############################################################################
 # Installation mode
