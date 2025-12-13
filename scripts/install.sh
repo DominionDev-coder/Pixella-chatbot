@@ -307,27 +307,42 @@ create_and_activate_venv() {
 # Clear pip cache
 ###############################################################################
 clear_pip_cache() {
-  ask "Clear pip cache to avoid old packages? [y/N]" "N" ans
-  case "$ans" in
-    y|Y)
-      step "Clearing pip cache..."
-      "$PYTHON_CMD" -m pip cache purge
-      ok "Pip cache cleared"
-      ;;
-    *)
-      warn "Skipping pip cache cleanup"
-      ;;
-  esac
+  ask "Do you want to clear the pip cache? This can help with slow or failed installs" "y" clear_cache
+  if [[ "$clear_cache" =~ ^[Yy]$ ]]; then
+    step "Clearing pip cache..."
+    "$PYTHON_CMD" -m pip cache purge || true
+    ok "Pip cache cleared"
+  else
+    warn "Skipping pip cache clear"
+  fi
 }
 
 
 ###############################################################################
-# Install dependencies
+# Install dependencies (optimized)
 ###############################################################################
 install_requirements() {
-  step "Installing Python dependencies..."
+  step "Upgrading pip, setuptools, and wheel..."
   "$PYTHON_CMD" -m pip install --upgrade pip setuptools wheel
-  "$PYTHON_CMD" -m pip install -r requirements.txt
+
+  step "Clearing pip cache (optional but recommended for fresh installs)..."
+  "$PYTHON_CMD" -m pip cache purge || true
+
+  step "Installing Python dependencies..."
+  # Pre-download pyarrow wheel to avoid slow builds
+  PYARROW_VERSION="11.0.0"
+  pip_download_dir=".wheelhouse"
+  mkdir -p "$pip_download_dir"
+
+  # Download pyarrow wheel only if not present
+  if [ ! -f "$pip_download_dir/pyarrow-$PYARROW_VERSION-*.whl" ]; then
+    "$PYTHON_CMD" -m pip download --only-binary=:all: pyarrow=="$PYARROW_VERSION" -d "$pip_download_dir"
+  fi
+
+  # Install everything using local wheel cache first
+  "$PYTHON_CMD" -m pip install --no-cache-dir --prefer-binary \
+      --find-links="$pip_download_dir" -r requirements.txt
+
   ok "Dependencies installed"
 }
 
@@ -434,6 +449,7 @@ main() {
   fi
 
   create_and_activate_venv
+  clear_pip_cache
   install_requirements
   setup_env_file
   export_to_path
