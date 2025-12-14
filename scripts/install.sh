@@ -412,6 +412,33 @@ EOF
 }
 
 
+create_env_template() {
+  ENV_TEMPLATE="$PROJECT_ROOT/.env.template"
+  if [ ! -f "$ENV_TEMPLATE" ]; then
+    step "Creating .env.template file..."
+    cat > "$ENV_TEMPLATE" <<EOL
+# Pixella Environment Configuration
+# copy this file to .env and fill in your values
+# required fields are marked with required
+GOOGLE_API_KEY=          # your Google API key (required)
+GOOGLE_AI_MODEL=gemini-2.5-flash  # Google AI model to use
+USERNAME=                # your username (optional)
+USER_PERSONA=           # your persona or hobby (optional)
+ALWAYS_DEBUG=false      # set to true to always enable debug mode
+DISABLE_COLORS=false    # set to true to disable colored output
+EMBEDDING_MODEL=models/embedding-001  # embedding model path
+MEMORY_PATH=$PROJECT_ROOT/data/memory  # path to memory storage
+MODELS_CACHE_DIR=$PROJECT_ROOT/models  # path to models cache directory
+DB_PATH=$PROJECT_ROOT/db/chroma  # path to SQLite database file
+EOL
+    ok ".env.template created"
+  else
+    warn ".env.template already exists, skipping creation"
+  fi
+
+}
+
+
 ###############################################################################
 # Environment setup
 ###############################################################################
@@ -419,6 +446,9 @@ setup_env_file() {
   step "Environment configuration..."
   ENV_FILE="$PROJECT_ROOT/.env"
   ENV_TEMPLATE="$PROJECT_ROOT/.env.template"
+  # Create .env if it doesn't exist
+  touch "$ENV_FILE"
+  # Copy template if .env is empty
   [ -f "$ENV_FILE" ] || cp "$ENV_TEMPLATE" "$ENV_FILE" 2>/dev/null || true
   # Configure Google API Key
   ask "Enter Google API Key (optional)" "" API_KEY
