@@ -151,30 +151,6 @@ check_git() {
 }
 
 
-#################################################################################
-# Detect Python version and command, Update the script and bin/pixella
-#################################################################################
-check_python_version() {
-  step "Checking Python installation..."
-
-  for cmd in python3.11 python3.12 python3.13; do
-    if command -v "$cmd" >/dev/null 2>&1; then
-      PYTHON_CMD="$cmd"
-      ok "Using $PYTHON_CMD"
-      return
-    fi
-
-  done
-
-  step "updating bin/pixella Python command..."
-  sed -i.bak "s|^PYTHON_CMD=.*$|PYTHON_CMD=\"python3.11\"|" "$PROJECT_ROOT/bin/pixella" || true
-  rm -f "$PROJECT_ROOT/bin/pixella.bak"
-  ok "bin/pixella updated to use detected system Python"
-
-  err "Python 3.11+ is required"
-  exit 1
-}
-
 ###############################################################################
 # Installation mode
 ###############################################################################
@@ -278,6 +254,20 @@ check_python_version() {
   err "Python 3.11+ is required"
   exit 1
 }
+
+
+###############################################################################
+# Update bin/pixella
+###############################################################################
+update_bin_pixella() {
+  step "updating bin/pixella Python command..."
+
+  sed -i.bak "s|^PYTHON_CMD=.*$|PYTHON_CMD=\"python3.11\"|" "$PROJECT_ROOT/bin/pixella" || true
+  rm -f "$PROJECT_ROOT/bin/pixella.bak"
+  ok "bin/pixella updated to use detected system Python"
+  return
+}
+
 
 ###############################################################################
 # Clone repository
@@ -427,13 +417,13 @@ EOF
 ###############################################################################
 setup_env_file() {
   step "Environment configuration..."
-
-  [ -f .env ] || cp .env.template .env 2>/dev/null || true
+  ENV_FILE="$PROJECT_ROOT/.env"
+  ENV_TEMPLATE="$PROJECT_ROOT/.env.template"
+  [ -f "$ENV_FILE" ] || cp "$ENV_TEMPLATE" "$ENV_FILE" 2>/dev/null || true
 
   ask "Enter Google API Key (optional)" "" API_KEY
   if [ -n "$API_KEY" ]; then
-    sed -i.bak "s/^GOOGLE_API_KEY=.*/GOOGLE_API_KEY=$API_KEY/" .env || true
-    rm -f .env.bak
+    sed -i.bak "s/^GOOGLE_API_KEY=.*/GOOGLE_API_KEY=$API_KEY/" "$ENV_FILE" || true
     ok "API key saved"
   else
     warn "No API key provided"
@@ -514,6 +504,7 @@ main() {
   check_git
   select_version
   check_python_version
+  update_bin_pixella
 
   [ "$INSTALLATION_MODE" = "remote" ] && clone_repository
 
