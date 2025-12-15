@@ -619,6 +619,7 @@ For issues and questions:
 2. Run `pixella --help` for command help
 3. Use `pixella config --show` to view configuration
 4. Run `python main.py` to verify installation
+5. Read the Troubleshooting docs: https://obatechhub-inc.github.io/Pixella-chatbot/troubleshooting.html
 
 ## 🗺️ Roadmap
 
@@ -637,5 +638,5 @@ Planned features:
 
 **Made with ❤️ by Pixella Contributors**
 
-Last updated: December 2025 - version 1.20.5 -> 1.20.7
+Last updated: December 2025 - version 1.20.5 -> 1.20.8(1.20.7)
 Python 3.11+ | MIT License

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Setup and Configuration
+title: Setup and Configuration | Pixella Chatbot Docs
 
 ---
 

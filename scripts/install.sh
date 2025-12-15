@@ -412,6 +412,33 @@ EOF
 }
 
 
+###############################################################################
+# Create .gitignore
+###############################################################################
+create_gitignore() {
+  GITIGNORE_FILE="$PROJECT_ROOT/.gitignore"
+  if [ ! -f "$GITIGNORE_FILE" ]; then
+    step "Creating .gitignore file..."
+    cat > "$GITIGNORE_FILE" <<EOL
+# Auto-generated .gitignore for Pixella
+# reccommended for users who are just using Pixella and not developing it
+__pycache__
+.venv
+.env
+.env.bak
+.env.template
+.gitignore
+db
+data
+.log
+*.log
+*.sqlite3
+.DS_Store
+
+
+###############################################################################
+# Create .env.template
+###############################################################################
 create_env_template() {
   ENV_TEMPLATE="$PROJECT_ROOT/.env.template"
   if [ ! -f "$ENV_TEMPLATE" ]; then
@@ -571,6 +598,7 @@ finish() {
   print "✓ Pixella installation complete!"
   print "══════════════════════════════════════════════════════${NC}"
   print ""
+  print "Read the docs at: https://obatechhub-inc.github.io/Pixella-chatbot/get-started.html"
   print "Try:"
   print "  pixella --help"
   print "Note: please run pixella config --init to update variables in case of mistakes"
@@ -603,6 +631,7 @@ main() {
   clear_pip_cache
   install_requirements
   verify_pyarrow
+  create_gitignore
   create_env_template
   setup_env_file
   export_to_path

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home
+title: Home | Pixella Chatbot Docs
 
 ---
 
@@ -29,5 +29,6 @@ Here you can find information on how to get started, install, and set up Pixella
 - [Get Started](get-started.md)
 - [Installation](installation.md)
 - [Setup](setup.md)
+- [Troubleshooting](troubleshooting.md)
 - [Development](develop.md)
 - [What's New](whats-new.md)

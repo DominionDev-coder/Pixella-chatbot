@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Get Started
+title: Get Started with Pixella | Pixella Chatbot Docs
 
 ---
 
