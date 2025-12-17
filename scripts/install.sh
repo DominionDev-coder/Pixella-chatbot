@@ -285,7 +285,7 @@ clone_repository() {
         cd "$PROJECT_ROOT"
         git fetch origin
         git fetch --tags --force
-        git status --porcelain | grep -q . && warn "Local changes detected, skipping pull" || git pull
+        git status --porcelain | grep -q . && warn "Local changes detected, skipping pull" || git pull || true
         ;;
       *)
         ok "Using existing repository"
@@ -434,6 +434,12 @@ data
 *.log
 *.sqlite3
 .DS_Store
+EOL
+    ok ".gitignore created"
+  else
+    warn ".gitignore already exists, skipping creation"
+  fi
+}
 
 
 ###############################################################################
