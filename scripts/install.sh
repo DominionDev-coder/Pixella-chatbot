@@ -460,16 +460,16 @@ create_env_template() {
 # Pixella Environment Configuration
 # copy this file to .env and fill in your values
 # required fields are marked with required
-GOOGLE_API_KEY=          # your Google API key (required)
-GOOGLE_AI_MODEL=gemini-2.5-flash  # Google AI model to use
-USER_NAME=                # your username (optional)
-USER_PERSONA=           # your persona or hobby (optional)
-ALWAYS_DEBUG=false      # set to true to always enable debug mode
-DISABLE_COLORS=false    # set to true to disable colored output
-EMBEDDING_MODEL=models/embedding-001  # embedding model path
-MEMORY_PATH=$PROJECT_ROOT/data/memory  # path to memory storage
-MODELS_CACHE_DIR=$PROJECT_ROOT/models  # path to models cache directory
-DB_PATH=$PROJECT_ROOT/db/chroma  # path to SQLite database file
+GOOGLE_API_KEY=
+GOOGLE_AI_MODEL=gemini-2.5-flash
+USER_NAME=
+USER_PERSONA=
+ALWAYS_DEBUG=false
+DISABLE_COLORS=false
+EMBEDDING_MODEL=models/embedding-001
+MEMORY_PATH=$PROJECT_ROOT/data/memory
+MODELS_CACHE_DIR=$PROJECT_ROOT/models
+DB_PATH=$PROJECT_ROOT/db/chroma
 EOL
     ok ".env.template created"
   else
